@@ -1,0 +1,8 @@
+.git
+.gitignore
+.env
+.env.*
+openclaw-data/
+.fly/
+README.md
+.DS_Store

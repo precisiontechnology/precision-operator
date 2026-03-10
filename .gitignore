@@ -1,0 +1,6 @@
+openclaw-data/
+.env
+.env.*
+.fly/
+.DS_Store
+*.log
