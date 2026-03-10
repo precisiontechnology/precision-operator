@@ -14,44 +14,12 @@ When user asks about ANY metric:
 2. ONLY if results are empty, then ask for clarification
 3. Never assume a metric doesn't exist
 
-## API Base
-
-https://precision.ngrok.app/api/v1/operator
-
-## Auth
-
-All requests require:
-- Header: Authorization: Bearer ${PRECISION_API_TOKEN}
-- Header: Content-Type: application/json
-
-## Tools
-
-### Get Metrics Summary
-POST /api/v1/operator/get_metrics_summary
-Body: query, diagnostic_mode, limit
-
-### Explore Causality
-POST /api/v1/operator/explore_causality
-Body: metric_id, direction (upstream/downstream/both), depth
-
-### Get Metric Data
-POST /api/v1/operator/get_metric_data
-Body: metric_id, days, start_date, end_date, time_expression
-
-### Get Metric By Name
-POST /api/v1/operator/get_metric_by_name
-Body: metric_name
-
-### Retrieve KB Context
-POST /api/v1/operator/retrieve_kb_context
-Body: query
-
 ## Workflow
 
 1. User asks about any metric → IMMEDIATELY call get_metrics_summary
-2. Need specific time range → get_metric_data with dates
-3. Why questions → explore_causality direction upstream
-4. How to fix → retrieve_kb_context
+2. Need specific time range → get_metric_data with metric_id from results
+3. "Why" questions → explore_causality with direction: upstream
+4. "How to fix" questions → retrieve_kb_context
 
 ## NEVER DO THIS
 
