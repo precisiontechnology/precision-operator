@@ -1,0 +1,18 @@
+services:
+  - type: worker
+    name: precision-operator-test
+    runtime: docker
+    region: ohio
+    plan: starter plus
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: PRECISION_API_TOKEN
+        sync: false
+    disk:
+      name: openclaw-data
+      mountPath: /home/node/.openclaw
+      sizeGB: 1
