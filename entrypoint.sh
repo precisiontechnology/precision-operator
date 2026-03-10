@@ -22,6 +22,7 @@ $PRECISION_ACCOUNT_ID
 EOF
 fi
 
-chown -R node:node /home/node/.openclaw
+# Fix permissions (ignore errors on lost+found)
+chown -R node:node /home/node/.openclaw 2>/dev/null || true
 
 exec "$@"
