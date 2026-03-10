@@ -1,6 +1,8 @@
+# Runtime state (not tracked)
 openclaw-data/
-.env
-.env.*
-.fly/
+
+# OS
 .DS_Store
-*.log
+
+# Node
+node_modules/

@@ -1,0 +1,11 @@
+{
+  "id": "precision",
+  "name": "Precision API",
+  "description": "Native tools for querying Precision business metrics, causality, and knowledge base.",
+  "version": "1.0.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}

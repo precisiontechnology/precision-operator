@@ -1,8 +1,7 @@
 .git
 .gitignore
-.env
-.env.*
-openclaw-data/
-.fly/
-README.md
 .DS_Store
+README.md
+
+# Runtime state (not baked into image)
+openclaw-data/

@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.3.8",
+    "lastTouchedAt": "2026-03-10T12:36:57.624Z"
+  },
+  "agents": {
+    "defaults": {
+      "contextPruning": {
+        "mode": "cache-ttl",
+        "ttl": "1h"
+      },
+      "compaction": {
+        "mode": "safeguard"
+      },
+      "heartbeat": {
+        "every": "30m"
+      },
+      "maxConcurrent": 4,
+      "subagents": {
+        "maxConcurrent": 8
+      }
+    }
+  },
+  "tools": {
+    "deny": ["exec", "gateway", "nodes", "canvas"]
+  },
+  "browser": {
+    "enabled": true,
+    "attachOnly": true,
+    "defaultProfile": "browserless",
+    "profiles": {
+      "browserless": {
+        "cdpUrl": "https://production-sfo.browserless.io?token=2U7gJFosh7Pnmb9df2baa8c6218fa444983734536f32b51e3",
+        "color": "#00AA00"
+      }
+    }
+  },
+  "messages": {
+    "ackReactionScope": "group-mentions"
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "restart": true,
+    "ownerDisplay": "raw"
+  },
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "dmPolicy": "pairing",
+      "groupPolicy": "allowlist",
+      "streaming": "partial"
+    }
+  },
+  "gateway": {
+    "mode": "local",
+    "auth": {
+      "mode": "token",
+      "token": "8a9382decf1d96c57aecba033662c808c28eb4db7f2d66d7"
+    }
+  },
+  "plugins": {
+    "allow": [
+      "precision",
+      "telegram"
+    ],
+    "load": {
+      "paths": [
+        "/home/node/.openclaw/workspace/plugins/precision"
+      ]
+    },
+    "entries": {
+      "precision": {
+        "enabled": true
+      }
+    },
+    "installs": {
+      "precision": {
+        "source": "path",
+        "sourcePath": "/home/node/.openclaw/workspace/plugins/precision",
+        "installPath": "/home/node/.openclaw/workspace/plugins/precision",
+        "version": "1.0.0",
+        "installedAt": "2026-03-10T12:23:08.863Z"
+      }
+    }
+  }
+}

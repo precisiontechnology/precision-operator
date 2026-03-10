@@ -1,0 +1,10 @@
+{
+  "name": "precision",
+  "version": "1.0.0",
+  "description": "Precision API tools for OpenClaw",
+  "main": "index.ts",
+  "type": "module",
+  "openclaw": {
+    "extensions": ["./index.ts"]
+  }
+}
