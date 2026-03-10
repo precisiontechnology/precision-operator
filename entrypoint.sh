@@ -10,11 +10,22 @@ cp -r /home/node/.openclaw-baked/workspace/* /home/node/.openclaw/workspace/
 
 chown -R node:node /home/node/.openclaw 2>/dev/null || true
 
-echo "=== CHECKING OPENCLAW ==="
-node -e "console.log('Testing import...'); import('./dist/cli/index.js').then(() => console.log('Import OK')).catch(e => console.error('Import failed:', e))"
+echo "=== NETWORK TEST ==="
+echo "DNS resolve:"
+getent hosts api.telegram.org || echo "DNS FAILED"
+echo "Curl test:"
+curl -s --max-time 5 https://api.telegram.org -o /dev/null && echo "Telegram reachable" || echo "Telegram UNREACHABLE"
 
-echo "=== TRYING OPENCLAW VERSION ==="
-node openclaw.mjs --version 2>&1 || echo "Version check failed: $?"
+echo "=== CONFIG ==="
+cat /home/node/.openclaw/openclaw.json
 
 echo "=== STARTING OPENCLAW ==="
-node openclaw.mjs gateway 2>&1 < /dev/null || echo "EXIT CODE: $?"
+node openclaw.mjs gateway 2>&1 < /dev/null &
+PID=$!
+echo "Started with PID: $PID"
+
+sleep 10
+echo "=== AFTER 10s, checking if alive ==="
+ps aux | grep node || echo "Node not running"
+
+sleep infinity
