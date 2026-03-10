@@ -30,5 +30,8 @@ echo "=== ENV CHECK ==="
 echo "TELEGRAM_BOT_TOKEN set: $([ -n \"$TELEGRAM_BOT_TOKEN\" ] && echo 'yes' || echo 'NO')"
 echo "ANTHROPIC_API_KEY set: $([ -n \"$ANTHROPIC_API_KEY\" ] && echo 'yes' || echo 'NO')"
 
+echo "=== LISTING /app ==="
+ls -la /app
+
 echo "=== STARTING OPENCLAW ==="
-exec "$@"
+exec node openclaw.mjs gateway 2>&1
