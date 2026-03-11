@@ -106,7 +106,8 @@
                 "url": "${QDRANT_URL}",
                 "apiKey": "${QDRANT_API_KEY}",
                 "collectionName": "memories-${PRECISION_ACCOUNT_ID}",
-                "embeddingModelDims": 1536
+                "embeddingModelDims": 1536,
+                "checkCompatibility": false
               }
             },
             "embedder": {
