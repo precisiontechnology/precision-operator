@@ -22,7 +22,12 @@
     }
   },
   "tools": {
-    "deny": ["exec", "gateway", "nodes", "canvas"],
+    "deny": [
+      "exec",
+      "gateway",
+      "nodes",
+      "canvas"
+    ],
     "sessions": {
       "visibility": "all"
     }
@@ -65,15 +70,16 @@
     },
     "http": {
       "endpoints": {
-        "chatCompletions": { "enabled": true }
+        "chatCompletions": {
+          "enabled": true
+        }
       }
     }
   },
   "plugins": {
     "allow": [
       "precision",
-      "telegram",
-      "openclaw-mem0"
+      "telegram"
     ],
     "load": {
       "paths": [
