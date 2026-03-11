@@ -83,7 +83,8 @@
     ],
     "load": {
       "paths": [
-        "/home/node/.openclaw/workspace/plugins/precision"
+        "/home/node/.openclaw/workspace/plugins/precision",
+        "/home/node/.openclaw/workspace/plugins/openclaw-mem0"
       ]
     },
     "entries": {
