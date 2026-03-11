@@ -17,8 +17,11 @@ RUN chmod +x /entrypoint.sh
 
 USER node
 
-# Install Mem0 plugin
-RUN openclaw plugins install @mem0/openclaw-mem0
+# Set up .openclaw and install plugin at build time
+RUN mkdir -p /home/node/.openclaw/workspace && \
+    cp /home/node/.openclaw-baked/openclaw.json /home/node/.openclaw/openclaw.json && \
+    cp -r /home/node/.openclaw-baked/workspace/* /home/node/.openclaw/workspace/ && \
+    openclaw plugins install @mem0/openclaw-mem0
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "openclaw.mjs", "gateway"]

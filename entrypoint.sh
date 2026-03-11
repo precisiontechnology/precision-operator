@@ -1,8 +1,7 @@
 #!/bin/bash
 set -e
 
-mkdir -p /home/node/.openclaw/workspace
-
+# Refresh config (env vars get substituted at runtime)
 cp /home/node/.openclaw-baked/openclaw.json /home/node/.openclaw/openclaw.json
 cp -r /home/node/.openclaw-baked/workspace/* /home/node/.openclaw/workspace/
 
