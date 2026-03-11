@@ -17,5 +17,8 @@ RUN chmod +x /entrypoint.sh
 
 USER node
 
+# Install Mem0 plugin
+RUN openclaw plugins install @mem0/openclaw-mem0
+
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "openclaw.mjs", "gateway"]
