@@ -22,7 +22,10 @@
     }
   },
   "tools": {
-    "deny": ["exec", "gateway", "nodes", "canvas"]
+    "deny": ["exec", "gateway", "nodes", "canvas"],
+    "sessions": {
+      "visibility": "all"
+    }
   },
   "browser": {
     "enabled": true,
