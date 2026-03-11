@@ -72,8 +72,12 @@
   "plugins": {
     "allow": [
       "precision",
-      "telegram"
+      "telegram",
+      "openclaw-mem0"
     ],
+    "slots": {
+      "memory": "openclaw-mem0"
+    },
     "load": {
       "paths": [
         "/home/node/.openclaw/workspace/plugins/precision"
@@ -122,6 +126,13 @@
         "installPath": "/home/node/.openclaw/workspace/plugins/precision",
         "version": "1.0.0",
         "installedAt": "2026-03-10T12:23:08.863Z"
+      },
+      "openclaw-mem0": {
+        "source": "npm",
+        "package": "@mem0/openclaw-mem0",
+        "version": "0.3.0",
+        "installPath": "/home/node/.openclaw/extensions/openclaw-mem0",
+        "installedAt": "2026-03-11T22:49:25.000Z"
       }
     }
   }
