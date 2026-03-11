@@ -1,4 +1,4 @@
-const BASE = process.env.PRECISION_API_URL || "https://operator.precision.co/api/v1/operator";
+const BASE = process.env.PRECISION_API_URL || "https://operator-api.precision.co/api/v1/operator";
 const TOKEN = process.env.PRECISION_API_TOKEN;
 
 async function callPrecision(endpoint: string, body: Record<string, unknown>) {
