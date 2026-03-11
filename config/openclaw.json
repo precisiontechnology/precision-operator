@@ -81,6 +81,9 @@
       "precision",
       "telegram"
     ],
+    "slots": {
+      "memory": "openclaw-mem0"
+    },
     "load": {
       "paths": [
         "/home/node/.openclaw/workspace/plugins/precision",
