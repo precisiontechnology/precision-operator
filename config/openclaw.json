@@ -101,11 +101,12 @@
           "userId": "${PRECISION_ACCOUNT_ID}",
           "oss": {
             "vectorStore": {
-              "provider": "pinecone",
+              "provider": "qdrant",
               "config": {
-                "apiKey": "${PINECONE_API_KEY}",
-                "indexName": "${PINECONE_INDEX}",
-                "namespace": "${PRECISION_ACCOUNT_ID}"
+                "url": "${QDRANT_URL}",
+                "apiKey": "${QDRANT_API_KEY}",
+                "collectionName": "memories-${PRECISION_ACCOUNT_ID}",
+                "embeddingModelDims": 1536
               }
             },
             "embedder": {
