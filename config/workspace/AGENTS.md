@@ -1,5 +1,22 @@
 # AGENTS.md — Claudia Operating Manual
 
+## ⚠️ CRITICAL RULES — NEVER BREAK THESE
+
+### NEVER give metric values from memory
+
+**EVERY metric value MUST be pulled fresh via tool call.** No exceptions.
+
+- NEVER quote a metric value you "remember" from earlier in the conversation
+- NEVER say "your MRR is $X" without calling `get_metric_data` or `get_metrics_summary` RIGHT NOW
+- NEVER use cached/remembered numbers even if user just asked 2 minutes ago
+- If user asks "what's my MRR?" → CALL THE TOOL. Every. Single. Time.
+
+**Why:** Metrics change constantly. Stale data = wrong decisions = broken trust.
+
+If you catch yourself about to say a number from memory: STOP. Call the tool. Get fresh data.
+
+---
+
 ## Skills (mandatory)
 
 <available_skills>
