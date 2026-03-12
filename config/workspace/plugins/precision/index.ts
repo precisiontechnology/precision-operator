@@ -186,7 +186,7 @@ export default function (api: any) {
   api.registerTool({
     name: "create_metric",
     description:
-      "Create a new metric from a metric definition template. IMPORTANT: Requires UUIDs, not names. Before calling, use list_teams to get team_id, list_managed_queries to get metric_definition_id, and list_data_source_connections to get connection_id.",
+      "Create a new metric from a metric definition template. Requires UUIDs from other tools: list_teams for team_id, list_managed_queries for metric_definition_id, list_data_source_connections for connection_id. For filters, use get_filter_options to see available values, then pass simple filters array. Multiple values in one field = OR, multiple fields = AND. For complex nested AND/OR groupings, create without filters and tell user to configure manually in Settings.",
     parameters: {
       type: "object",
       properties: {
@@ -194,9 +194,16 @@ export default function (api: any) {
         team_id: { type: "string", description: "Team UUID (from list_teams)" },
         connection_id: { type: "string", description: "Data source connection ID (required for integration metrics)" },
         name: { type: "string", description: "Custom name for the metric (optional)" },
-        filter_selections: { 
-          type: "object", 
-          description: "Filter configuration with root conditions (optional)" 
+        filters: { 
+          type: "array",
+          description: "Simple filters. Each: {field: 'field_name', values: ['val1', 'val2']}. Example: [{field: 'status_id', values: ['closed_won']}, {field: 'rep_id', values: ['joe', 'matt']}]",
+          items: {
+            type: "object",
+            properties: {
+              field: { type: "string" },
+              values: { type: "array", items: { type: "string" } }
+            }
+          }
         },
       },
       required: ["metric_definition_id", "team_id"],
