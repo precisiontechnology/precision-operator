@@ -1,4 +1,4 @@
-const BASE = process.env.PRECISION_API_URL || "https://operator-api.precision.co/api/v1/operator";
+const BASE = process.env.PRECISION_API_URL || "https://precision.ngrok.app/api/v1/operator";
 const TOKEN = process.env.PRECISION_API_TOKEN;
 
 async function callPrecision(endpoint: string, body: Record<string, unknown>) {
@@ -168,6 +168,22 @@ export default function (api: any) {
   });
 
   api.registerTool({
+    name: "list_teams",
+    description:
+      "List all teams for the account with their DRI (directly responsible individual), members, and current metrics. Use this FIRST when user mentions a team by name — resolves team name to team_id needed for create_metric.",
+    parameters: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Filter by team name (case-insensitive partial match)" },
+      },
+      required: [],
+    },
+    async execute(_id: string, params: Record<string, unknown>) {
+      return callPrecision("list_teams", params);
+    },
+  });
+
+  api.registerTool({
     name: "create_metric",
     description:
       "Create a new metric from a metric definition template. Use this to add a metric to the account's scorecard. Can include filter selections to narrow the data (e.g., only closed-won deals from a specific rep).",
@@ -175,7 +191,7 @@ export default function (api: any) {
       type: "object",
       properties: {
         metric_definition_id: { type: "string", description: "Metric definition ID to create from" },
-        team_id: { type: "string", description: "Team ID to add the metric to" },
+        team_id: { type: "string", description: "Team ID to add the metric to (use list_teams to find)" },
         connection_id: { type: "string", description: "Data source connection ID (required for integration metrics)" },
         name: { type: "string", description: "Custom name for the metric (optional)" },
         filter_selections: { 
