@@ -186,12 +186,12 @@ export default function (api: any) {
   api.registerTool({
     name: "create_metric",
     description:
-      "Create a new metric from a metric definition template. Use this to add a metric to the account's scorecard. Can include filter selections to narrow the data (e.g., only closed-won deals from a specific rep).",
+      "Create a new metric from a metric definition template. IMPORTANT: Requires UUIDs, not names. Before calling, use list_teams to get team_id, list_managed_queries to get metric_definition_id, and list_data_source_connections to get connection_id.",
     parameters: {
       type: "object",
       properties: {
-        metric_definition_id: { type: "string", description: "Metric definition ID to create from" },
-        team_id: { type: "string", description: "Team ID to add the metric to (use list_teams to find)" },
+        metric_definition_id: { type: "string", description: "Metric definition UUID (from list_managed_queries)" },
+        team_id: { type: "string", description: "Team UUID (from list_teams)" },
         connection_id: { type: "string", description: "Data source connection ID (required for integration metrics)" },
         name: { type: "string", description: "Custom name for the metric (optional)" },
         filter_selections: { 
