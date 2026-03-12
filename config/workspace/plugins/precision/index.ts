@@ -120,6 +120,20 @@ export default function (api: any) {
   // Zero-config metrics tools
 
   api.registerTool({
+    name: "list_data_source_connections",
+    description:
+      "List all connected data sources/integrations for this account. Use this FIRST when user asks about integrations, connected platforms, data sources, or what systems are syncing. Returns connection IDs needed for other zero-config tools.",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+    async execute(_id: string, params: Record<string, unknown>) {
+      return callPrecision("list_data_source_connections", params);
+    },
+  });
+
+  api.registerTool({
     name: "list_managed_queries",
     description:
       "List available metric templates (managed queries) for a connected data source. Use this to discover what metrics can be tracked from an integration like HubSpot, Stripe, etc.",
