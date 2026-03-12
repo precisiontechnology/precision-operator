@@ -196,19 +196,35 @@ export default function (api: any) {
         name: { type: "string", description: "Custom name for the metric (optional)" },
         filters: { 
           type: "array",
-          description: "Simple filters. Each: {field: 'field_name', values: ['val1', 'val2']}. Example: [{field: 'status_id', values: ['closed_won']}, {field: 'rep_id', values: ['joe', 'matt']}]",
+          description: "STRICT FORMAT: [{\"field\": \"field_name\", \"values\": [\"val1\", \"val2\"]}]. Use 'values' (array), NOT 'value' (string). Do NOT use nested structures like {root: {conditions: []}}.",
           items: {
             type: "object",
             properties: {
-              field: { type: "string" },
-              values: { type: "array", items: { type: "string" } }
-            }
+              field: { type: "string", description: "Field name from get_filter_options" },
+              values: { type: "array", items: { type: "string" }, description: "Array of values (even for single value)" }
+            },
+            required: ["field", "values"],
+            additionalProperties: false
           }
         },
       },
       required: ["metric_definition_id", "team_id"],
     },
     async execute(_id: string, params: Record<string, unknown>) {
+      // Validate filters format before sending
+      const filters = params.filters as Array<{field?: string; values?: string[]}> | undefined;
+      if (filters && Array.isArray(filters)) {
+        for (const f of filters) {
+          if (!f.field || !Array.isArray(f.values)) {
+            return { 
+              content: [{ 
+                type: "text" as const, 
+                text: `Invalid filter format. Each filter must have "field" (string) and "values" (array). Got: ${JSON.stringify(f)}. Correct format: {"field": "item_product_id", "values": ["prod_123"]}` 
+              }] 
+            };
+          }
+        }
+      }
       return callPrecision("create_metric", params);
     },
   });
