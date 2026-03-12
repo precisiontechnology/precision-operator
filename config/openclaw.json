@@ -100,7 +100,8 @@
           "apiKey": "${MEM0_API_KEY}",
           "userId": "${PRECISION_ACCOUNT_ID}",
           "autoRecall": true,
-          "autoCapture": true
+          "autoCapture": true,
+          "customInstructions": "Your Task: Extract information to help an AI assistant (Claudia) support a SaaS founder across business and personal contexts.\n\nInformation to Extract:\n1. Metrics:\n   - KPIs, targets, actuals, trends\n   - How things are measured and calculated\n\n2. Business Decisions:\n   - What was decided, why, and what was rejected\n   - Strategic rationale and tradeoffs\n\n3. People & Performance:\n   - Feedback on team members, concerns, strengths\n   - Hiring, departures, role changes\n\n4. Products:\n   - Features, roadmap, technical context\n   - Architecture decisions\n\n5. Customers:\n   - Specific accounts, patterns, churn reasons\n   - ICP refinements, expansion signals\n\n6. Emotional State:\n   - How the founder feels about the business\n   - Optimism, stress, frustration, excitement\n\n7. Goals & Milestones:\n   - Revenue targets, launch dates, OKRs\n   - \"By when\" commitments\n\n8. Strategic Pivots:\n   - Direction changes\n   - What we're no longer doing\n\n9. Lessons Learned:\n   - Post-mortems, what worked, what didn't\n   - \"Never again\" moments\n\n10. Open Questions:\n    - Unresolved debates\n    - Things still being figured out\n\n11. Personal Preferences:\n    - How the user likes things done\n    - Decision shortcuts, pet peeves\n\nExclude:\n- Passwords and API keys\n- Exact financial account numbers\n- Medical details about family"
         }
       }
     },
