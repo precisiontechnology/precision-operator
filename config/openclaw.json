@@ -23,7 +23,6 @@
   },
   "tools": {
     "deny": [
-      "exec",
       "gateway",
       "nodes",
       "canvas"

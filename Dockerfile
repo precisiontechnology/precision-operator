@@ -5,6 +5,7 @@ USER root
 # Bake platform config
 COPY config/workspace/ /home/node/.openclaw-baked/workspace/
 COPY config/openclaw.json /home/node/.openclaw-baked/openclaw.json
+COPY config/exec-approvals.json /home/node/.openclaw-baked/exec-approvals.json
 
 # Copy skills
 COPY skills/ /app/skills/

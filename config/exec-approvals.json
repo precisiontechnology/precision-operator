@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "defaults": {
+    "security": "allowlist",
+    "ask": "off",
+    "askFallback": "deny"
+  },
+  "agents": {
+    "main": {
+      "security": "allowlist",
+      "ask": "off",
+      "askFallback": "deny",
+      "allowlist": [
+        { "pattern": "/app/node_modules/.bin/openclaw" },
+        { "pattern": "/usr/local/bin/openclaw" }
+      ]
+    }
+  }
+}
