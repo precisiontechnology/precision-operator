@@ -116,4 +116,82 @@ export default function (api: any) {
       return callPrecision("retrieve_kb_context", params);
     },
   });
+
+  // Zero-config metrics tools
+
+  api.registerTool({
+    name: "list_managed_queries",
+    description:
+      "List available metric templates (managed queries) for a connected data source. Use this to discover what metrics can be tracked from an integration like HubSpot, Stripe, etc.",
+    parameters: {
+      type: "object",
+      properties: {
+        connection_id: { type: "string", description: "Data source connection ID" },
+      },
+      required: ["connection_id"],
+    },
+    async execute(_id: string, params: Record<string, unknown>) {
+      return callPrecision("list_managed_queries", params);
+    },
+  });
+
+  api.registerTool({
+    name: "get_filter_options",
+    description:
+      "Get available filter options (dropdown values) for a specific field on a managed query. Use this when creating a metric with filters to know what values are available (e.g., deal stages, users, pipelines).",
+    parameters: {
+      type: "object",
+      properties: {
+        managed_query_id: { type: "string", description: "Managed query ID" },
+        field: { type: "string", description: "Field name to get options for (e.g., 'status_id', 'user_id', 'pipeline_id')" },
+        connection_id: { type: "string", description: "Data source connection ID" },
+      },
+      required: ["managed_query_id", "field", "connection_id"],
+    },
+    async execute(_id: string, params: Record<string, unknown>) {
+      return callPrecision("get_filter_options", params);
+    },
+  });
+
+  api.registerTool({
+    name: "create_metric",
+    description:
+      "Create a new metric from a metric definition template. Use this to add a metric to the account's scorecard. Can include filter selections to narrow the data (e.g., only closed-won deals from a specific rep).",
+    parameters: {
+      type: "object",
+      properties: {
+        metric_definition_id: { type: "string", description: "Metric definition ID to create from" },
+        team_id: { type: "string", description: "Team ID to add the metric to" },
+        connection_id: { type: "string", description: "Data source connection ID (required for integration metrics)" },
+        name: { type: "string", description: "Custom name for the metric (optional)" },
+        filter_selections: { 
+          type: "object", 
+          description: "Filter configuration with root conditions (optional)" 
+        },
+      },
+      required: ["metric_definition_id", "team_id"],
+    },
+    async execute(_id: string, params: Record<string, unknown>) {
+      return callPrecision("create_metric", params);
+    },
+  });
+
+  api.registerTool({
+    name: "get_underlying_data",
+    description:
+      "Get the individual records behind a metric value. Use this to drill into the details and understand what's driving a number (e.g., see the actual deals that make up 'Deals Won').",
+    parameters: {
+      type: "object",
+      properties: {
+        metric_id: { type: "string", description: "Metric ID" },
+        date: { type: "string", description: "Date to get records for (YYYY-MM-DD)" },
+        page: { type: "number", description: "Page number (default: 1)" },
+        per_page: { type: "number", description: "Records per page (default: 25, max: 100)" },
+      },
+      required: ["metric_id", "date"],
+    },
+    async execute(_id: string, params: Record<string, unknown>) {
+      return callPrecision("get_underlying_data", params);
+    },
+  });
 }
