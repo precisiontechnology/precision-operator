@@ -1,3 +1,8 @@
+---
+name: playbooks
+description: Access best practices, growth strategies, and recommendations. Use when user asks how to fix something, wants advice, or needs playbooks for growth.
+---
+
 # Playbooks Skill
 
 Access best practices, growth strategies, and recommendations from the Precision knowledge base.

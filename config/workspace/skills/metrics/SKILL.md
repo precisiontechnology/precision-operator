@@ -1,3 +1,8 @@
+---
+name: metrics
+description: Query, create, configure, and drill into business metrics. Use when user asks about MRR, churn, revenue, trends, creating metrics, or drilling into data.
+---
+
 # Metrics Skill
 
 Query, create, configure, and drill into business metrics.

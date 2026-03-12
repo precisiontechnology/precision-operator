@@ -1,3 +1,8 @@
+---
+name: integrations
+description: View connected platforms, sync status, and diagnose connection errors. Use when user asks about integrations, data sources, what's syncing, or connection health.
+---
+
 # Integrations Skill
 
 View connected platforms, sync status, and diagnose connection errors.
