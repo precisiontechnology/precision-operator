@@ -31,6 +31,11 @@
       "visibility": "all"
     }
   },
+  "skills": {
+    "load": {
+      "extraDirs": ["/home/node/.openclaw-baked/workspace/skills"]
+    }
+  },
   "browser": {
     "enabled": true,
     "attachOnly": true,
