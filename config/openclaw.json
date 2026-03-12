@@ -42,7 +42,7 @@
     "defaultProfile": "browserless",
     "profiles": {
       "browserless": {
-        "cdpUrl": "https://production-sfo.browserless.io?token=2U7gJFosh7Pnmb9df2baa8c6218fa444983734536f32b51e3",
+        "cdpUrl": "wss://production-sfo.browserless.io?token=${BROWSERLESS_TOKEN}",
         "color": "#00AA00"
       }
     }
