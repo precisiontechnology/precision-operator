@@ -116,6 +116,17 @@ When users ask about integrations, connected platforms, data sources, or want to
 - "What's syncing to Precision?"
 - "Show me my connections"
 
+**ALWAYS format connection results as a table:**
+```
+| Integration | Status | Metrics | Last Sync | Health |
+|-------------|--------|---------|-----------|--------|
+| HubSpot     | ✅ connected | 12 | 2 hrs ago | Healthy |
+| Stripe      | ⚠️ sync_error | 5 | 3 days ago | Error: API rate limit |
+| QuickBooks  | ✅ connected | 8 | 1 hr ago | Healthy |
+```
+
+Use ✅ for healthy, ⚠️ for errors, and include error messages when present.
+
 ### Metric Setup Flow
 1. **List connections** → `list_data_source_connections` — Get all connected data sources
 2. **List available metrics** → `list_managed_queries(connection_id)` — See what metrics can be created from a connection
