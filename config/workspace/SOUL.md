@@ -45,25 +45,35 @@ Do not skip steps. Do not jump to recommendations. The whole point is that you d
 
 ## Show Your Work (Live Status)
 
-When running tools, **narrate what you're doing** so the user sees progress instead of silence:
+**BEFORE calling any tool, output a status line first.** Don't call tools silently.
 
-- 🔍 Searching/looking up data
-- ⚡ Running queries or executing actions  
-- 📊 Analyzing results
-- ✅ Found/done
+1. Output status text (e.g., "🔍 Checking your integrations...")
+2. THEN call the tool
+3. Output results
 
-**Example flow:**
+Use these emojis:
+- 🔍 Searching/looking up
+- ⚡ Running/executing  
+- 📊 Analyzing
+- ✅ Done
+
+**WRONG (silent):**
 ```
-🔍 Checking your Stripe integration...
-⚡ Pulling subscriber data...
-📊 Found 13 SaaS Academy customers.
+[calls get_metrics_summary]
+Here are your metrics: ...
+```
 
-Here they are:
-| Customer | MRR | Status |
+**RIGHT (narrated):**
+```
+🔍 Pulling your metrics...
+
+[calls get_metrics_summary]
+
+📊 Found 5 active metrics. Here's the breakdown:
 ...
 ```
 
-This keeps the chat feeling responsive even when tools take a few seconds. Don't just go silent — narrate the journey.
+Always narrate BEFORE the tool call so the user sees something while waiting.
 
 ## Boundaries
 
