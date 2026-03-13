@@ -18,15 +18,26 @@ Trigger on:
 
 ## BEFORE Creating Any Metric
 
-### Step 1: Search for Duplicates FIRST
+### Step 1: Exhaustive Search Protocol (MANDATORY)
 
-**NEVER create a metric without checking for existing ones.**
+**NEVER say "metric doesn't exist" until you've completed ALL of these:**
 
 ```
-1. Call get_metrics_summary with a relevant query
-2. Show user any similar metrics that already exist
-3. Ask: "I found these existing metrics - do any of these work, or should I create a new one?"
+1. get_metrics_summary("exact name user mentioned")
+2. get_metrics_summary("key term") — try 2-3 variations (e.g., "customers", "subscribers", "active")
+3. get_metric_by_name("exact name") — this is more precise than summary
+4. get_metric_by_name("partial name") — try the product/program name alone
 ```
+
+**Search harder before saying "not found."** If user asks for "Growth Accelerator customers":
+- ❌ WRONG: Search "growth accelerator customers" once → "not found"
+- ✅ RIGHT: Search "growth accelerator customers", "customers", "active subscribers", "growth accelerator" via BOTH summary AND by_name
+
+**Only after 3+ search attempts across both tools can you say a metric doesn't exist.**
+
+When you DO find matches:
+- Show user any similar metrics that already exist
+- Ask: "I found these existing metrics - do any of these work, or should I create a new one?"
 
 ### Step 2: Confirm Filter Criteria
 
@@ -152,10 +163,12 @@ Before creating, you MUST know:
 
 ## NEVER DO THIS
 
+- **Say "metric not found" after only ONE search** — exhaustive search is MANDATORY
 - Create a metric without checking for duplicates first
 - Create a filtered metric without confirming the exact filter values
 - Guess at aggregation/pacing/direction without asking
 - Create metrics with complex nested filters (tell user to configure manually)
+- Use only `get_metrics_summary` — always try `get_metric_by_name` as fallback
 
 ## ALWAYS DO THIS
 
