@@ -136,7 +136,7 @@ export default function (api: any) {
   api.registerTool({
     name: "list_managed_queries",
     description:
-      "List available metric templates (managed queries) for a connected data source. Use this to discover what metrics can be tracked from an integration like HubSpot, Stripe, etc.",
+      "List available metric templates (managed queries) for a connected data source. Use this to discover what metrics CAN BE tracked from an integration like HubSpot, Stripe, etc.",
     parameters: {
       type: "object",
       properties: {
@@ -146,6 +146,22 @@ export default function (api: any) {
     },
     async execute(_id: string, params: Record<string, unknown>) {
       return callPrecision("list_managed_queries", params);
+    },
+  });
+
+  api.registerTool({
+    name: "list_metrics_by_connection",
+    description:
+      "List metrics CURRENTLY BEING TRACKED from a specific integration. Use when user asks 'what am I tracking from HighLevel/Stripe/HubSpot?' Returns active metrics with current values, filters applied, and sync status.",
+    parameters: {
+      type: "object",
+      properties: {
+        connection_id: { type: "string", description: "Data source connection ID (from list_data_source_connections)" },
+      },
+      required: ["connection_id"],
+    },
+    async execute(_id: string, params: Record<string, unknown>) {
+      return callPrecision("list_metrics_by_connection", params);
     },
   });
 

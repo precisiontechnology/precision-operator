@@ -26,6 +26,30 @@ When user asks about integrations, connected platforms, or data sources:
 
 **Use:** `list_data_source_connections`
 
+---
+
+## Metrics by Integration
+
+When user asks what metrics they're tracking from a specific integration:
+- "What metrics am I tracking from HighLevel?"
+- "Show me my Stripe metrics"
+- "What am I pulling from HubSpot?"
+
+**Workflow:**
+1. Get connection ID → `list_data_source_connections`
+2. List tracked metrics → `list_metrics_by_connection(connection_id)`
+
+**Format as table:**
+
+| Metric | Team | Current Value | Last Synced | Filters |
+|--------|------|---------------|-------------|---------|
+| MRR | Revenue | $45,230 | 2 hrs ago | — |
+| Active Subscribers | Revenue | 142 | 2 hrs ago | product: Growth Accelerator |
+
+**Contrast with `list_managed_queries`:**
+- `list_metrics_by_connection` → What you ARE tracking (active metrics)
+- `list_managed_queries` → What you COULD track (available templates)
+
 **ALWAYS format as a table:**
 
 | Integration | Status | Metrics | Last Sync | Health |
