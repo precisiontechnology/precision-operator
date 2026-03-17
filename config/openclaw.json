@@ -18,6 +18,16 @@
       "maxConcurrent": 4,
       "subagents": {
         "maxConcurrent": 8
+      },
+      "memorySearch": {
+        "enabled": true,
+        "experimental": {
+          "sessionMemory": true
+        },
+        "sources": [
+          "memory",
+          "sessions"
+        ]
       }
     }
   },
