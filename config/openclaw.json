@@ -73,9 +73,9 @@
     "mode": "local",
     "bind": "lan",
     "port": 18789,
-    "auth": {
+        "auth": {
       "mode": "token",
-      "token": "8a9382decf1d96c57aecba033662c808c28eb4db7f2d66d7"
+      "token": "${PRECISION_GATEWAY_TOKEN}"
     },
     "http": {
       "endpoints": {

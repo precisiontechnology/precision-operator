@@ -1,15 +1,34 @@
 const BASE = process.env.PRECISION_API_URL || "https://operator-api.precision.co/api/v1/operator";
 const TOKEN = process.env.PRECISION_API_TOKEN;
 
-async function callPrecision(endpoint: string, body: Record<string, unknown>) {
-  if (!TOKEN) {
-    return { content: [{ type: "text" as const, text: "Error: PRECISION_API_TOKEN is not configured." }] };
+// Per-session JWT extracted from sessionKey via before_agent_start hook
+let currentSessionToken: string | undefined;
+
+function parseSessionKey(sessionKey: string | undefined): { accountId?: string; userId?: string; jwt?: string } {
+  if (!sessionKey) return {};
+  // Format: "<account_id>:<user_id>::<jwt>" (:: separates identity from token)
+  const doubleColonIdx = sessionKey.indexOf("::");
+  if (doubleColonIdx === -1) {
+    // Legacy format: "<account_id>:<user_id>"
+    const [accountId, userId] = sessionKey.split(":");
+    return { accountId, userId };
+  }
+  const identityPart = sessionKey.substring(0, doubleColonIdx);
+  const jwt = sessionKey.substring(doubleColonIdx + 2);
+  const [accountId, userId] = identityPart.split(":");
+  return { accountId, userId, jwt: jwt || undefined };
+}
+
+async function callPrecision(endpoint: string, body: Record<string, unknown>, token?: string) {
+  const effectiveToken = token || currentSessionToken || TOKEN;
+  if (!effectiveToken) {
+    return { content: [{ type: "text" as const, text: "Error: No authentication token available (no session JWT or PRECISION_API_TOKEN)." }] };
   }
   try {
     const res = await fetch(`${BASE}/${endpoint}`, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${TOKEN}`,
+        "Authorization": `Bearer ${effectiveToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
@@ -26,6 +45,16 @@ async function callPrecision(endpoint: string, body: Record<string, unknown>) {
 }
 
 export default function (api: any) {
+  // Extract per-session JWT from sessionKey on each agent turn
+  api.on("before_agent_start", (event: any, ctx: any) => {
+    const sessionKey = ctx?.sessionKey;
+    if (!sessionKey) return;
+    const { jwt } = parseSessionKey(sessionKey);
+    if (jwt) {
+      currentSessionToken = jwt;
+    }
+  });
+
   api.registerTool({
     name: "get_metrics_summary",
     description:
@@ -164,9 +193,9 @@ export default function (api: any) {
         team_id: { type: "string", description: "Team ID to add the metric to" },
         connection_id: { type: "string", description: "Data source connection ID (required for integration metrics)" },
         name: { type: "string", description: "Custom name for the metric (optional)" },
-        filter_selections: { 
-          type: "object", 
-          description: "Filter configuration with root conditions (optional)" 
+        filter_selections: {
+          type: "object",
+          description: "Filter configuration with root conditions (optional)",
         },
       },
       required: ["metric_definition_id", "team_id"],
