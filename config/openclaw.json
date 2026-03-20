@@ -79,14 +79,7 @@
       "token": "${PRECISION_GATEWAY_TOKEN}"
     },
     "controlUi": {
-      "enabled": true,
-      "dangerouslyDisableDeviceAuth": true,
-      "allowedOrigins": [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "https://app.precision.sh",
-        "https://app-staging.precision.sh"
-      ]
+      "enabled": false
     },
     "http": {
       "endpoints": {
