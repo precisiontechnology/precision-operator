@@ -21,11 +21,15 @@ function parseSessionKey(sessionKey: string | undefined): { accountId?: string; 
 
 async function callPrecision(endpoint: string, body: Record<string, unknown>, token?: string) {
   const effectiveToken = token || currentSessionToken || TOKEN;
+  const url = `${BASE}/${endpoint}`;
+  console.log(`[precision-plugin] ${endpoint} → ${url}`);
+  console.log(`[precision-plugin] token source: ${token ? "explicit" : currentSessionToken ? "sessionKey JWT" : TOKEN ? "PRECISION_API_TOKEN env" : "NONE"}`);
+  console.log(`[precision-plugin] token preview: ${effectiveToken ? effectiveToken.substring(0, 20) + "..." : "undefined"}`);
   if (!effectiveToken) {
     return { content: [{ type: "text" as const, text: "Error: No authentication token available (no session JWT or PRECISION_API_TOKEN)." }] };
   }
   try {
-    const res = await fetch(`${BASE}/${endpoint}`, {
+    const res = await fetch(url, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${effectiveToken}`,
@@ -45,11 +49,13 @@ async function callPrecision(endpoint: string, body: Record<string, unknown>, to
 }
 
 export default function (api: any) {
-  // Extract per-session JWT from sessionKey on each agent turn
   api.on("before_agent_start", (event: any, ctx: any) => {
     const sessionKey = ctx?.sessionKey;
+    console.log(`[precision-plugin] before_agent_start sessionKey: ${sessionKey ? sessionKey.substring(0, 40) + "..." : "undefined"}`);
+    console.log(`[precision-plugin] ctx keys: ${ctx ? Object.keys(ctx).join(", ") : "no ctx"}`);
     if (!sessionKey) return;
-    const { jwt } = parseSessionKey(sessionKey);
+    const { jwt, accountId, userId } = parseSessionKey(sessionKey);
+    console.log(`[precision-plugin] parsed: account=${accountId}, user=${userId}, jwt=${jwt ? "present (" + jwt.length + " chars)" : "missing"}`);
     if (jwt) {
       currentSessionToken = jwt;
     }
