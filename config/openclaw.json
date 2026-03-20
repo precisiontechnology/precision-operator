@@ -73,12 +73,20 @@
     "mode": "local",
     "bind": "lan",
     "port": 18789,
-        "auth": {
+    "trustedProxies": ["0.0.0.0/0"],
+    "auth": {
       "mode": "token",
       "token": "${PRECISION_GATEWAY_TOKEN}"
     },
     "controlUi": {
-      "enabled": false
+      "enabled": true,
+      "allowInsecureAuth": true,
+      "allowedOrigins": [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://app.precision.sh",
+        "https://app-staging.precision.sh"
+      ]
     },
     "http": {
       "endpoints": {
