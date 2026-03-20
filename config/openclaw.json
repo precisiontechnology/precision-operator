@@ -63,7 +63,7 @@
   },
   "channels": {
     "telegram": {
-      "enabled": true,
+      "enabled": false,
       "dmPolicy": "pairing",
       "groupPolicy": "allowlist",
       "streaming": "partial"
@@ -76,6 +76,9 @@
         "auth": {
       "mode": "token",
       "token": "${PRECISION_GATEWAY_TOKEN}"
+    },
+    "controlUi": {
+      "enabled": false
     },
     "http": {
       "endpoints": {

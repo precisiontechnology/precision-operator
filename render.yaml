@@ -1,9 +1,9 @@
 services:
-  - type: worker
+  - type: web
     name: precision-operator-test
     runtime: docker
-    region: ohio
-    plan: starter plus
+    region: virginia
+    plan: standard
     dockerfilePath: ./Dockerfile
     envVars:
       - key: ANTHROPIC_API_KEY
