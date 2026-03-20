@@ -8,15 +8,17 @@ cp /home/node/.openclaw-baked/exec-approvals.json /home/node/.openclaw/exec-appr
 cp -r /home/node/.openclaw-baked/workspace/* /home/node/.openclaw/workspace/
 
 if [ -n "$PRECISION_DEVICE_ID" ] && [ -n "$PRECISION_DEVICE_PUBLIC_KEY" ]; then
-  DEVICE_DIR="$HOME/.openclaw/gateway/devices"
-  mkdir -p "$DEVICE_DIR"
-  cat > "$DEVICE_DIR/$PRECISION_DEVICE_ID.json" <<DEVICE_EOF
+  mkdir -p "$HOME/.openclaw/devices"
+  cat > "$HOME/.openclaw/devices/paired.json" <<DEVICE_EOF
 {
-  "id": "$PRECISION_DEVICE_ID",
-  "publicKey": "$PRECISION_DEVICE_PUBLIC_KEY",
-  "name": "precision-backend",
-  "role": "operator",
-  "registeredAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  "$PRECISION_DEVICE_ID": {
+    "deviceId": "$PRECISION_DEVICE_ID",
+    "publicKey": "$PRECISION_DEVICE_PUBLIC_KEY",
+    "name": "precision-backend",
+    "role": "operator",
+    "roles": ["operator"],
+    "scopes": ["operator.read", "operator.write", "operator.admin"]
+  }
 }
 DEVICE_EOF
 fi
