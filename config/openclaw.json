@@ -87,8 +87,7 @@
     "controlUi": {
       "allowedOrigins": [
         "http://localhost:3000"
-      ],
-      "dangerouslyDisableDeviceAuth": true
+      ]
     }
   },
   "plugins": {
