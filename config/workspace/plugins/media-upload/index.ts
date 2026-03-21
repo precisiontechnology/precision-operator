@@ -1,4 +1,7 @@
 import { execFileSync } from "child_process";
+
+// Store recent uploads for HTTP retrieval by frontend
+const recentMedia: Array<{ url: string; ts: number }> = [];
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -23,6 +26,24 @@ function syncUploadToR2(localPath: string): string | null {
 }
 
 export default function register(api: any) {
+  // HTTP endpoint for frontend fallback
+  api.registerHttpRoute({
+    method: "GET",
+    path: "/media/recent",
+    auth: "plugin",
+    handler: (req: any, res: any) => {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+      res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+      if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return true; }
+      const body = JSON.stringify({ media: recentMedia });
+      res.setHeader("Content-Type", "application/json");
+      res.statusCode = 200;
+      res.end(body);
+      return true;
+    }
+  });
+
   // tool_result_persist: synchronously transform tool results before the model sees them
   // This is the ONLY hook that can modify what the model receives
   api.on(
@@ -66,6 +87,8 @@ export default function register(api: any) {
         }
 
         console.log(`[media-upload:tool_result_persist] uploaded: ${localPath} → ${r2Url}`);
+        recentMedia.push({ url: r2Url, ts: Date.now() });
+        if (recentMedia.length > 20) recentMedia.shift();
 
         // Replace the MEDIA: path with the R2 URL in the tool result text
         // The model will see this URL and can include it in its reply
