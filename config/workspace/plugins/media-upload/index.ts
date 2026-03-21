@@ -36,7 +36,12 @@ export default function register(api: any) {
       res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
       res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
       if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return true; }
-      const body = JSON.stringify({ media: recentMedia });
+      // Only return media from last 30 seconds, then clear
+      const cutoff = Date.now() - 30000;
+      const recent = recentMedia.filter(m => m.ts > cutoff);
+      const body = JSON.stringify({ media: recent });
+      // Clear served entries
+      recentMedia.length = 0;
       res.setHeader("Content-Type", "application/json");
       res.statusCode = 200;
       res.end(body);
