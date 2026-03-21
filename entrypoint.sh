@@ -3,7 +3,13 @@ set -e
 
 mkdir -p /home/node/.openclaw/workspace
 
-cp /home/node/.openclaw-baked/openclaw.json /home/node/.openclaw/openclaw.json
+# Only copy baked config if no existing config in volume
+if [ ! -f /home/node/.openclaw/openclaw.json ]; then
+  cp /home/node/.openclaw-baked/openclaw.json /home/node/.openclaw/openclaw.json
+  echo "[entrypoint] initialized openclaw.json from baked config"
+else
+  echo "[entrypoint] using existing openclaw.json from volume"
+fi
 
 # Set gateway auth token from account ID if provided
 if [ -n "$PRECISION_ACCOUNT_ID" ]; then
