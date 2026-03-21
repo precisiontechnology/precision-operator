@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 const __dirname_plugin = typeof __dirname !== "undefined"
   ? __dirname
   : dirname(fileURLToPath(import.meta.url));
-const UPLOAD_SCRIPT = resolve(__dirname_plugin, "upload-to-r2.js");
+const UPLOAD_SCRIPT = resolve(__dirname_plugin, "upload-to-r2.cjs");
 
 function syncUploadToR2(localPath: string): string | null {
   try {
