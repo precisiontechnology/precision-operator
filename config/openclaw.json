@@ -41,13 +41,18 @@
       "visibility": "all"
     }
   },
+  "skills": {
+    "load": {
+      "extraDirs": ["/home/node/.openclaw-baked/workspace/skills"]
+    }
+  },
   "browser": {
     "enabled": true,
     "attachOnly": true,
     "defaultProfile": "browserless",
     "profiles": {
       "browserless": {
-        "cdpUrl": "https://production-sfo.browserless.io?token=2U7gJFosh7Pnmb9df2baa8c6218fa444983734536f32b51e3",
+        "cdpUrl": "wss://production-sfo.browserless.io?token=${BROWSERLESS_TOKEN}",
         "color": "#00AA00"
       }
     }
@@ -75,7 +80,17 @@
     "port": 18789,
     "auth": {
       "mode": "token",
-      "token": "8a9382decf1d96c57aecba033662c808c28eb4db7f2d66d7"
+      "token": "${PRECISION_ACCOUNT_ID}"
+    },
+    "controlUi": {
+      "allowInsecureAuth": true,
+      "dangerouslyDisableDeviceAuth": true,
+      "allowedOrigins": [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://operator.precision.co",
+        "https://operator-staging.precision.co"
+      ]
     },
     "http": {
       "endpoints": {
