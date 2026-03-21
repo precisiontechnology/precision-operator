@@ -25,7 +25,7 @@ function syncUploadToR2(localPath: string): string | null {
 export default function register(api: any) {
   // tool_result_persist: synchronously transform tool results before the model sees them
   // This is the ONLY hook that can modify what the model receives
-  api.registerHook(
+  api.on(
     "tool_result_persist",
     (event: any, ctx: any) => {
       const toolName = (event.toolName || ctx?.toolName || "").toLowerCase();
@@ -83,8 +83,8 @@ export default function register(api: any) {
         return { message: msg };
       }
     },
-    { name: "media-upload.tool-result-persist", description: "Upload screenshots to R2 and inject URL into tool result" }
+    { priority: 10 }
   );
 
-  console.log("[media-upload] registered tool_result_persist hook (sync R2 upload)");
+  console.log("[media-upload] registered tool_result_persist via api.on() (sync R2 upload)");
 }
