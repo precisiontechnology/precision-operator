@@ -15,11 +15,38 @@ export default function register(api: any) {
   // ============================================================
   // HTTP ROUTE: GET /media/recent — frontend fetches after tool completion
   // ============================================================
+  // CORS preflight handler
+  api.registerHttpRoute({
+    method: "OPTIONS",
+    path: "/media/recent",
+    auth: "gateway",
+    handler: (req: any, res: any) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+      res.writeHead(204);
+      res.end();
+      return true;
+    }
+  });
+
   api.registerHttpRoute({
     method: "GET",
     path: "/media/recent",
     auth: "gateway",
     handler: (req: any, res: any) => {
+      // CORS headers for cross-origin fetch from frontend
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+
+      // Handle preflight
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204);
+        res.end();
+        return true;
+      }
+
       const since = Number(req.query?.since || 0);
       const toolCallId = req.query?.toolCallId;
 
