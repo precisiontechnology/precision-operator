@@ -69,10 +69,9 @@ export default function register(api: any) {
 
         // Replace the MEDIA: path with the R2 URL in the tool result text
         // The model will see this URL and can include it in its reply
-        const newText = block.text.replace(
-          `MEDIA:${localPath}`,
-          `Screenshot uploaded and available at: ${r2Url}\n\nYou MUST include this image in your reply to the user using markdown: ![Screenshot](${r2Url})`
-        );
+        // Replace the ENTIRE tool result text — don't keep MEDIA: prefix
+        // which makes the model think delivery is handled automatically
+        const newText = `Tool result: Screenshot captured successfully.\n\nThe screenshot image URL is: ${r2Url}\n\nYou MUST include this exact markdown in your response so the user can see the image:\n![Screenshot](${r2Url})`;
 
         msg.content[i] = { ...block, text: newText };
         modified = true;
