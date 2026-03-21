@@ -15,11 +15,11 @@ export default function register(api: any) {
   // ============================================================
   // HTTP ROUTE: GET /media/recent — frontend fetches after tool completion
   // ============================================================
-  // CORS preflight handler
+  // CORS preflight handler (no auth — browser won't send auth on preflight)
   api.registerHttpRoute({
     method: "OPTIONS",
     path: "/media/recent",
-    auth: "gateway",
+    auth: "plugin",
     handler: (req: any, res: any) => {
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
