@@ -54,7 +54,10 @@ export default function register(api: any) {
       if (since > 0) results = results.filter(m => m.ts > since);
       if (toolCallId) results = results.filter(m => m.toolCallId === toolCallId);
 
-      res.json({ media: results.map(m => ({ url: m.url, toolCallId: m.toolCallId, ts: m.ts })) });
+      const body = JSON.stringify({ media: results.map(m => ({ url: m.url, toolCallId: m.toolCallId, ts: m.ts })) });
+      res.setHeader('Content-Type', 'application/json');
+      res.statusCode = 200;
+      res.end(body);
       return true;
     }
   });
