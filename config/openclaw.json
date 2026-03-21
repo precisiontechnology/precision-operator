@@ -29,7 +29,7 @@
           "sessions"
         ]
       },
-      "verbose": "full"
+      "verboseDefault": "full"
     }
   },
   "tools": {
