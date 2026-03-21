@@ -41,34 +41,52 @@ function getClient(): S3Client | null {
   return s3;
 }
 
-export async function uploadToR2(localPath: string): Promise<string | null> {
+function buildPublicUrl(key: string): string {
+  if (PUBLIC_URL_BASE) {
+    return `${PUBLIC_URL_BASE}/${key}`;
+  }
+  // Fallback: construct from endpoint
+  const host = ENDPOINT!.replace("https://", "").replace("http://", "");
+  return `https://${BUCKET}.${host}/${key}`;
+}
+
+async function upload(body: Buffer | Uint8Array, key: string, contentType: string): Promise<string | null> {
   const client = getClient();
   if (!client) return null;
 
+  try {
+    await client.send(new PutObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+    }));
+    return buildPublicUrl(key);
+  } catch (err) {
+    console.error(`[media-upload] Upload failed for ${key}:`, err);
+    return null;
+  }
+}
+
+export async function uploadToR2(localPath: string): Promise<string | null> {
   try {
     const data = await readFile(localPath);
     const filename = basename(localPath);
     const ext = extname(localPath).toLowerCase();
     const contentType = MIME_TYPES[ext] || "application/octet-stream";
-    const timestamp = Date.now();
-    const key = `claudia/${ACCOUNT_ID}/media/${timestamp}-${filename}`;
-
-    await client.send(new PutObjectCommand({
-      Bucket: BUCKET,
-      Key: key,
-      Body: data,
-      ContentType: contentType,
-    }));
-
-    // Return public URL
-    if (PUBLIC_URL_BASE) {
-      return `${PUBLIC_URL_BASE}/${key}`;
-    }
-    // Fallback: construct from endpoint
-    const host = ENDPOINT!.replace("https://", "").replace("http://", "");
-    return `https://${BUCKET}.${host}/${key}`;
+    const key = `claudia/${ACCOUNT_ID}/media/${Date.now()}-${filename}`;
+    return upload(data, key, contentType);
   } catch (err) {
-    console.error(`[media-upload] Failed to upload ${localPath}:`, err);
+    console.error(`[media-upload] Failed to read ${localPath}:`, err);
     return null;
   }
+}
+
+export async function uploadToR2FromBuffer(
+  buffer: Buffer | Uint8Array,
+  filename: string,
+  contentType: string = "image/png"
+): Promise<string | null> {
+  const key = `claudia/${ACCOUNT_ID}/media/${Date.now()}-${filename}`;
+  return upload(buffer instanceof Buffer ? buffer : Buffer.from(buffer), key, contentType);
 }
