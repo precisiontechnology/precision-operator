@@ -13,55 +13,24 @@ When the screenshot tool result contains a URL (e.g. `https://pub-*.r2.dev/...`)
 ![Screenshot](https://the-url-from-tool-result)
 ```
 
-Do NOT just say "here's the screenshot" — the user cannot see the image unless you include the URL as markdown. This is required for web chat delivery.
+Do NOT just say "here's the screenshot" — the user cannot see the image unless you include the URL as markdown.
 
-## Before Any Screenshot
+## Taking Screenshots
 
-Ask what they want:
+For a simple viewport screenshot, use ONE tool call with all parameters:
 
-"How do you want this screenshot?
-1. Viewport - just whats visible (1920x1080)
-2. Full page (single) - entire page stitched
-3. Full page (chunked) - series of viewport images
+```
+browser screenshot --navigate <url> --width 1920 --height 1080
+```
 
-Or name a section (hero, pricing, footer) to scroll there first."
+Do NOT call open, resize, and screenshot separately. Use `--navigate` to combine them.
 
-## Viewport Only
-browser resize 1920 1080
-browser open <url>
-browser wait --load networkidle
-browser screenshot
-## Full Page Single
-browser resize 1920 1080
-browser open <url>
-browser wait --load networkidle
-browser evaluate --fn "() => window.scrollTo(0, document.body.scrollHeight)"
-browser wait --time 2000
-browser evaluate --fn "() => window.scrollTo(0, 0)"
-browser wait --time 500
-browser screenshot --full-page
-## Full Page Chunked
-browser resize 1920 1080
-browser open <url>
-browser wait --load networkidle
-browser evaluate --fn "() => window.scrollTo(0, document.body.scrollHeight)"
-browser wait --time 2000
-browser evaluate --fn "() => window.scrollTo(0, 0)"
-browser wait --time 500
-browser screenshot --full-page /tmp/fullpage.png
-convert /tmp/fullpage.png -crop 1920x1080 +repage /tmp/chunk-%d.png
-Send each chunk file in sequence.
+For a full page screenshot:
+```
+browser screenshot --navigate <url> --width 1920 --height 1080 --full-page
+```
 
-## Specific Section
-browser resize 1920 1080
-browser open <url>
-browser wait --load networkidle
-browser snapshot
-browser scrollintoview <ref>
-browser wait --time 500
-browser screenshot
 ## Defaults
-
 - No preference = viewport only
-- Always resize 1920x1080 first
-- Always wait for networkidle
+- Always use --navigate with the URL in the screenshot call
+- Do NOT ask the user how they want it unless they specifically ask for options
