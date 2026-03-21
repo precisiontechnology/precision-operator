@@ -1,10 +1,44 @@
 import { uploadToR2FromBuffer, uploadToR2 } from "./r2-client.js";
 import { scanForLocalPaths, filterExistingFiles } from "./path-scanner.js";
 
-export default function register(api: any) {
-  const { emitAgentEvent } = api.runtime.events;
+const recentMedia: Array<{ url: string; toolCallId: string; ts: number }> = [];
+const MAX_RECENT = 50;
 
-  // Single hook: after_tool_call — upload to R2 and emit event to WebSocket
+function addMedia(url: string, toolCallId: string) {
+  recentMedia.push({ url, toolCallId, ts: Date.now() });
+  while (recentMedia.length > MAX_RECENT) recentMedia.shift();
+}
+
+export default function register(api: any) {
+  // HTTP endpoint — single route, plugin auth (handles CORS itself)
+  api.registerHttpRoute({
+    method: "GET",
+    path: "/media/recent",
+    auth: "plugin",  // plugin auth so we handle CORS + auth ourselves
+    handler: (req: any, res: any) => {
+      // CORS headers
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+      res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+
+      // Handle preflight
+      if (req.method === "OPTIONS") {
+        res.writeHead(204);
+        res.end();
+        return true;
+      }
+
+      const results = recentMedia;
+      const body = JSON.stringify({ media: results.map(m => ({ url: m.url, toolCallId: m.toolCallId, ts: m.ts })) });
+      res.setHeader("Content-Type", "application/json");
+      res.statusCode = 200;
+      res.end(body);
+      console.log(`[media-upload] GET /media/recent → ${results.length} items`);
+      return true;
+    }
+  });
+
+  // after_tool_call — upload to R2 and store URL
   api.on(
     "after_tool_call",
     async (event: any, ctx: any) => {
@@ -17,14 +51,11 @@ export default function register(api: any) {
       const content = result.content || result;
       if (!Array.isArray(content)) return;
 
-      const runId = event.runId || "";
-      const sessionKey = ctx?.sessionKey || "";
-      const uploadedUrls: string[] = [];
+      const toolCallId = event.toolCallId || ctx?.toolCallId || "";
 
       for (const block of content) {
         if (!block) continue;
 
-        // Base64 image blocks
         if (block.type === "image" && block.source?.type === "base64" && block.source?.data) {
           const mediaType = block.source.media_type || "image/png";
           const ext = mediaType.split("/")[1] || "png";
@@ -32,18 +63,17 @@ export default function register(api: any) {
           const buffer = Buffer.from(block.source.data, "base64");
           const url = await uploadToR2FromBuffer(buffer, filename, mediaType);
           if (url) {
-            uploadedUrls.push(url);
+            addMedia(url, toolCallId);
             console.log(`[media-upload] screenshot uploaded: ${url}`);
           }
         }
 
-        // Text blocks with MEDIA: paths or local file paths
         if (typeof block.text === "string") {
           const mediaMatch = block.text.match(/MEDIA:(\S+)/);
           if (mediaMatch) {
             const url = await uploadToR2(mediaMatch[1]);
             if (url) {
-              uploadedUrls.push(url);
+              addMedia(url, toolCallId);
               console.log(`[media-upload] MEDIA: path uploaded: ${mediaMatch[1]} → ${url}`);
             }
           }
@@ -54,40 +84,16 @@ export default function register(api: any) {
             for (const match of existing) {
               const url = await uploadToR2(match.path);
               if (url) {
-                uploadedUrls.push(url);
+                addMedia(url, toolCallId);
                 console.log(`[media-upload] file uploaded: ${match.path} → ${url}`);
               }
             }
           }
         }
       }
-
-      // Emit media event to WebSocket so frontend can render the images
-      if (uploadedUrls.length > 0) {
-        emitAgentEvent({
-          runId,
-          stream: "media",
-          sessionKey,
-          data: {
-            type: "screenshot",
-            urls: uploadedUrls,
-          },
-        });
-        console.log(`[media-upload] emitted ${uploadedUrls.length} media URL(s) to WebSocket`);
-      }
     },
     { priority: 5 }
   );
 
-  // Fallback: message_sending for Telegram/channel delivery
-  api.on(
-    "message_sending",
-    async (event: any) => {
-      // This still works for Telegram since OpenClaw handles MEDIA: internally
-      // No changes needed here
-    },
-    { priority: 10 }
-  );
-
-  console.log("[media-upload] registered after_tool_call hook (emitAgentEvent for WS delivery)");
+  console.log("[media-upload] registered GET /media/recent + after_tool_call hooks");
 }
