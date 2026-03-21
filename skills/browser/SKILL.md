@@ -5,6 +5,16 @@ description: Take screenshots of websites. Use when user asks to screenshot, cap
 
 # Browser Screenshots Skill
 
+## CRITICAL: Screenshot URL in reply
+
+When the screenshot tool result contains a URL (e.g. `https://pub-*.r2.dev/...`), you MUST include it in your reply as a markdown image:
+
+```
+![Screenshot](https://the-url-from-tool-result)
+```
+
+Do NOT just say "here's the screenshot" — the user cannot see the image unless you include the URL as markdown. This is required for web chat delivery.
+
 ## Before Any Screenshot
 
 Ask what they want:
