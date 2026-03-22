@@ -374,7 +374,7 @@ export default function (api: any) {
   api.registerTool({
     name: "list_available_data_sources",
     description:
-      "List all available data source integrations (catalog) with connection status. Use to show users what they can connect or to check if a specific platform is available.",
+      "List available data source integrations with connection status. Each source includes a pre-built `integration_block`. IMPORTANT: Do NOT paste integration_blocks in your response unless the user has named a SPECIFIC source to connect. If the user asks what's available, summarize the list as text and ask which one they want. Only paste ONE integration_block at a time, only after the user chooses.",
     parameters: {
       type: "object",
       properties: {
