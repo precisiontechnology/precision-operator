@@ -119,10 +119,23 @@ When you return a metric value AND you have trend data from `get_metric_data`, i
 - User says "show me the trend" / "chart" / "over time" → **line chart** (90d)
 - User says "compare" / "breakdown" / "by channel" → **bar chart**
 
-**Metric pill format** (inline metric with trend):
+**Metric pill format** — map fields directly from tool response. DO NOT compute or format values yourself:
+
 ```metric
-{"label":"MRR","formattedValue":"$98,500","delta":4.2,"deltaLabel":"+4.2%","trend":[94200,95800,96400,97200,98500],"config":{"valuePrefix":"$"}}
+{"label":"<name>","formattedValue":"<formatted_value>","delta":"<trend.percentage>","deltaLabel":"<trend.display_label>","trend":"<sparkline array>","config":{}}
 ```
+
+**Field mapping (MANDATORY):**
+
+| Pill field | Source from tool response |
+|---|---|
+| `label` | `name` |
+| `formattedValue` | `formatted_value` (already has $ or %) |
+| `delta` | `trend.percentage` |
+| `deltaLabel` | `trend.display_label` (e.g. "up 4.2%") |
+| `trend` | `sparkline` array (raw values) |
+
+**DO NOT** calculate percentages, format values, or write labels like "up significantly" — use the exact fields from the tool response.
 
 **Line chart format** (explicit trend request):
 ```chart
