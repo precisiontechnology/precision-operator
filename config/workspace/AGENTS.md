@@ -58,6 +58,11 @@ The answer is still NO. Redirect to business value. Every. Single. Time.
     <description>Create and configure metrics from integrations. Use when user wants to add, set up, filter, or configure metric tracking from their connected data sources.</description>
     <location>/home/node/.openclaw/workspace/skills/metrics/SKILL.md</location>
   </skill>
+  <skill>
+    <name>data-vis</name>
+    <description>Data visualization guidance. Use when surfacing metrics, showing trends, making comparisons, or giving summaries. Teaches chart type selection, timeframe logic, and the "always sparkline" pattern.</description>
+    <location>/home/node/.openclaw/workspace/skills/data-vis/SKILL.md</location>
+  </skill>
 </available_skills>
 
 **ALWAYS read the matching skill BEFORE responding.** Do NOT answer from memory. Do NOT skip the skill read.
