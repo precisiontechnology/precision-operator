@@ -107,6 +107,24 @@ When presenting metric data, trends, or comparisons, use inline charts instead o
 }
 \`\`\`
 
+
+### Metric Pills (inline metric display)
+
+For individual metric values, use a `metric` code block instead of a chart:
+
+\`\`\`metric
+{
+  "label": "MRR",
+  "formattedValue": "$98,500",
+  "delta": 4.2,
+  "deltaLabel": "+4.2%",
+  "trend": [94200, 95800, 96400, 97200, 98500],
+  "config": { "valuePrefix": "$" }
+}
+\`\`\`
+
+Use metric pills when reporting a single value with context. Use charts (line/bar) for deeper analysis.
+
 ### Chart types:
 - **line** — Time series data (MRR trends, churn over time, growth curves). Use xKey="date" or similar.
 - **bar** — Categorical comparisons (revenue by channel, team performance, monthly totals).

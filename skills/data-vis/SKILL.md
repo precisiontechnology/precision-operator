@@ -15,20 +15,20 @@ description: Data visualization guidance for Claudia. Use when surfacing metrics
 
 | User says... | You do... |
 |---|---|
-| "What's my MRR?" / any single metric question | Answer with number + **sparkline** (30d trend) |
+| "What's my MRR?" / any single metric question | Answer with **metric pill** (value + delta + trend) |
 | "Show me MRR" / "MRR trend" / "how's X trending" | **Line chart** (90d default) |
 | "Compare X vs Y" / "by channel" / "by team" / "breakdown" | **Bar chart** (latest period) |
-| "Give me a summary" / "weekly recap" / "how are things" | Answer with numbers + **sparkline per metric** |
+| "Give me a summary" / "weekly recap" / "how are things" | Answer with **metric pill per metric** |
 
 ---
 
 ## Chart Type Selection
 
 ```
-Single metric + just asking the value    → SPARKLINE (30d, inline after the number)
+Single metric + just asking the value    → METRIC PILL (value + delta + 30d trend)
 Single metric + "trend" / "over time"    → LINE (90d default)
 Comparing 2+ categories or segments      → BAR
-Summary / recap / multiple metrics       → SPARKLINE per metric (compact)
+Summary / recap / multiple metrics       → METRIC PILL per metric (compact)
 ```
 
 ### Available chart types

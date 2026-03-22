@@ -111,17 +111,17 @@ When presenting metric values, add visual context using chart code blocks.
 
 ### Default: Sparkline with metric values
 
-When you return a metric value AND you have trend data from `get_metric_data`, include a sparkline. It's a small inline trend — adds context without clutter.
+When you return a metric value AND you have trend data from `get_metric_data`, include a metric pill. It's a small inline trend — adds context without clutter.
 
-**When to sparkline:** You're reporting a metric value and the conversation isn't rapid-fire Q&A. Use judgment — if the user is asking "what's my MRR?" in a conversational way, sparkline fits. If they're firing off 10 questions, just give numbers.
+**When to use metric pill:** You're reporting a metric value and the conversation isn't rapid-fire Q&A. Use judgment — if the user is asking "what's my MRR?" in a conversational way, metric pill fits. If they're firing off 10 questions, just give numbers.
 
 **When to full chart:**
 - User says "show me the trend" / "chart" / "over time" → **line chart** (90d)
 - User says "compare" / "breakdown" / "by channel" → **bar chart**
 
-**Sparkline format** (30d trend, compact):
-```chart
-{"type":"sparkline","data":[{"date":"Mar 1","value":94200},{"date":"Mar 8","value":95800},{"date":"Mar 15","value":97200},{"date":"Mar 20","value":98500}],"config":{"valuePrefix":"$"}}
+**Metric pill format** (inline metric with trend):
+```metric
+{"label":"MRR","formattedValue":"$98,500","delta":4.2,"deltaLabel":"+4.2%","trend":[94200,95800,96400,97200,98500],"config":{"valuePrefix":"$"}}
 ```
 
 **Line chart format** (explicit trend request):
