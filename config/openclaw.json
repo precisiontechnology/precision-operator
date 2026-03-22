@@ -73,13 +73,21 @@
     "mode": "local",
     "bind": "lan",
     "port": 18789,
-    "trustedProxies": ["0.0.0.0/0"],
+    "trustedProxies": ["10.0.0.0/8"],
     "auth": {
-      "mode": "token",
-      "token": "${PRECISION_GATEWAY_TOKEN}"
+      "mode": "trusted-proxy",
+      "trustedProxy": {
+        "userHeader": "x-precision-user-id"
+      }
     },
     "controlUi": {
-      "enabled": false
+      "enabled": true,
+      "allowedOrigins": [
+        "https://operator.precision.co",
+        "https://operator-staging.precision.co",
+        "http://127.0.0.1:3000",
+        "http://localhost:3000"
+      ]
     },
     "http": {
       "endpoints": {
