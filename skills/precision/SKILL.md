@@ -102,6 +102,45 @@ When user asks "how do I fix X?" or wants best practices:
 
 ---
 
+
+---
+
+## Visual Context: Sparklines & Charts
+
+When presenting metric values, add visual context using chart code blocks.
+
+### Default: Sparkline with metric values
+
+When you return a metric value AND you have trend data from `get_metric_data`, include a sparkline. It's a small inline trend — adds context without clutter.
+
+**When to sparkline:** You're reporting a metric value and the conversation isn't rapid-fire Q&A. Use judgment — if the user is asking "what's my MRR?" in a conversational way, sparkline fits. If they're firing off 10 questions, just give numbers.
+
+**When to full chart:**
+- User says "show me the trend" / "chart" / "over time" → **line chart** (90d)
+- User says "compare" / "breakdown" / "by channel" → **bar chart**
+
+**Sparkline format** (30d trend, compact):
+```chart
+{"type":"sparkline","data":[{"date":"Mar 1","value":94200},{"date":"Mar 8","value":95800},{"date":"Mar 15","value":97200},{"date":"Mar 20","value":98500}],"config":{"valuePrefix":"$"}}
+```
+
+**Line chart format** (explicit trend request):
+```chart
+{"type":"line","title":"MRR (Last 90 Days)","data":[...],"config":{"yAxisLabel":"MRR","valuePrefix":"$","color":"#10b981"}}
+```
+
+**Bar chart format** (comparisons):
+```chart
+{"type":"bar","title":"Revenue by Channel","data":[{"channel":"Organic","value":42000},...],"config":{"xKey":"channel","valuePrefix":"$"}}
+```
+
+**Rules:**
+- Data MUST come from `get_metric_data` — never fabricate
+- Use `valuePrefix: "$"` for currency, `valueSuffix: "%"` for percentages
+- Keep sparkline data to 4–8 points, line charts to 7–30 points
+- Default color: `#10b981` (emerald). Use `#ef4444` for bad trends, `#f59e0b` for flat
+- For the full data-vis reference, read the data-vis skill
+
 ## NEVER DO THIS
 
 - "No metric found" without searching first
