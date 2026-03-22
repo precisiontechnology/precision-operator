@@ -137,6 +137,33 @@ When you return a metric value AND you have trend data from `get_metric_data`, i
 
 **DO NOT** calculate percentages, format values, or write labels like "up significantly" — use the exact fields from the tool response.
 
+**EXAMPLE — tool returns this:**
+```json
+{
+  "name": "Monthly Recurring Revenue",
+  "formatted_value": "$115,697",
+  "trend": {
+    "direction": "up",
+    "percentage": 12.3,
+    "display_label": "up 12.3%"
+  },
+  "sparkline": [98500, 102000, 105200, 110400, 115697]
+}
+```
+
+**You output EXACTLY this (no changes to values or labels):**
+```metric
+{"label":"Monthly Recurring Revenue","formattedValue":"$115,697","delta":12.3,"deltaLabel":"up 12.3%","trend":[98500,102000,105200,110400,115697],"config":{}}
+```
+
+**WRONG — do NOT do this:**
+```metric
+{"label":"MRR","formattedValue":"$115,697.56","delta":12.3,"deltaLabel":"increased significantly vs same time last month","trend":[98500,102000,105200,110400,115697],"config":{}}
+```
+The deltaLabel must come from `trend.display_label` EXACTLY. Not your words.
+
+
+
 **Line chart format** (explicit trend request):
 ```chart
 {"type":"line","title":"MRR (Last 90 Days)","data":[...],"config":{"yAxisLabel":"MRR","valuePrefix":"$","color":"#10b981"}}
