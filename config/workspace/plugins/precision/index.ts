@@ -1,5 +1,35 @@
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+
 const BASE = process.env.PRECISION_API_URL || "https://precision.ngrok.app/api/v1/operator";
 const TOKEN = process.env.PRECISION_API_TOKEN;
+
+// Browserless REST API
+const BROWSERLESS_TOKEN = process.env.BROWSERLESS_TOKEN;
+const BROWSERLESS_URL = "https://production-sfo.browserless.io";
+
+// R2 config
+const R2_BUCKET = process.env.R2_BUCKET || "precision-media";
+const R2_ENDPOINT = process.env.R2_ENDPOINT;
+const R2_ACCESS_KEY = process.env.R2_ACCESS_KEY_ID;
+const R2_SECRET_KEY = process.env.R2_SECRET_ACCESS_KEY;
+const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || "";
+const ACCOUNT_ID = process.env.PRECISION_ACCOUNT_ID || "default";
+
+async function uploadToR2(data: Buffer, filename: string): Promise<string> {
+  if (!R2_ENDPOINT || !R2_ACCESS_KEY || !R2_SECRET_KEY) {
+    throw new Error("R2 credentials not configured");
+  }
+  const key = `claudia/${ACCOUNT_ID}/media/${Date.now()}-${filename}`;
+  const s3 = new S3Client({
+    region: "auto",
+    endpoint: R2_ENDPOINT,
+    credentials: { accessKeyId: R2_ACCESS_KEY, secretAccessKey: R2_SECRET_KEY },
+  });
+  await s3.send(new PutObjectCommand({
+    Bucket: R2_BUCKET, Key: key, Body: data, ContentType: "image/png",
+  }));
+  return R2_PUBLIC_URL ? `${R2_PUBLIC_URL}/${key}` : `https://${R2_BUCKET}.${R2_ENDPOINT!.replace("https://","").replace("http://","")}/${key}`;
+}
 
 async function callPrecision(endpoint: string, body: Record<string, unknown>) {
   if (!TOKEN) {
@@ -261,6 +291,83 @@ export default function (api: any) {
     },
     async execute(_id: string, params: Record<string, unknown>) {
       return callPrecision("get_underlying_data", params);
+    },
+  });
+
+  // Screenshot tool — calls Browserless REST API directly, uploads to R2, returns URL
+  api.registerTool({
+    name: "take_screenshot",
+    description:
+      "Take a screenshot of any webpage. Returns a public image URL. Use when user asks to screenshot, capture, or show them any webpage. Always include the returned URL as a markdown image in your response: ![Screenshot](url)",
+    parameters: {
+      type: "object",
+      properties: {
+        url: { type: "string", description: "The URL to screenshot" },
+        full_page: { type: "boolean", description: "Capture the full scrollable page (default: false, viewport only)" },
+        selector: { type: "string", description: "CSS selector to screenshot a specific element (e.g. '#hero', '.pricing-table')" },
+        width: { type: "number", description: "Viewport width in pixels (default: 1920)" },
+        height: { type: "number", description: "Viewport height in pixels (default: 1080)" },
+        wait_for: { type: "number", description: "Milliseconds to wait after page load before capturing (default: 3000)" },
+      },
+      required: ["url"],
+    },
+    async execute(_id: string, params: Record<string, unknown>) {
+      if (!BROWSERLESS_TOKEN) {
+        return { content: [{ type: "text" as const, text: "Error: BROWSERLESS_TOKEN is not configured." }] };
+      }
+
+      const targetUrl = params.url as string;
+      const fullPage = (params.full_page as boolean) || false;
+      const selector = params.selector as string | undefined;
+      const width = (params.width as number) || 1920;
+      const height = (params.height as number) || 1080;
+      const waitFor = (params.wait_for as number) || 3000;
+
+      try {
+        // Build Browserless /screenshot request
+        const body: Record<string, unknown> = {
+          url: targetUrl,
+          options: {
+            fullPage,
+            type: "png",
+          },
+          viewport: { width, height },
+          waitForTimeout: waitFor,
+          gotoOptions: { waitUntil: "networkidle2", timeout: 30000 },
+        };
+
+        if (selector) {
+          body.selector = selector;
+        }
+
+        const res = await fetch(`${BROWSERLESS_URL}/screenshot?token=${BROWSERLESS_TOKEN}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          return { content: [{ type: "text" as const, text: `Screenshot failed (${res.status}): ${errText}` }] };
+        }
+
+        // Response is the PNG binary
+        const pngBuffer = Buffer.from(await res.arrayBuffer());
+        const filename = `screenshot-${Date.now()}.png`;
+
+        // Upload to R2
+        const publicUrl = await uploadToR2(pngBuffer, filename);
+
+        return {
+          content: [{
+            type: "text" as const,
+            text: `Screenshot captured successfully.\n\nImage URL: ${publicUrl}\n\nInclude this in your response:\n![Screenshot](${publicUrl})`,
+          }],
+        };
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text" as const, text: `Screenshot failed: ${message}` }] };
+      }
     },
   });
 }
