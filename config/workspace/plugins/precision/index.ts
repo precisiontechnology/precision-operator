@@ -1,4 +1,4 @@
-const BASE = process.env.PRECISION_API_URL || "https://operator-api.precision.co/api/v1/operator";
+const BASE = process.env.PRECISION_API_URL || "https://operator-api.precision.co/api/v1/operator_tools";
 const GATEWAY_TOKEN = process.env.PRECISION_GATEWAY_TOKEN;
 
 let currentUserId: string | undefined;
