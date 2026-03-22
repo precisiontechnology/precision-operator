@@ -132,6 +132,29 @@ Rules:
 - Default color: #10b981 (emerald)
 - Keep line charts to 7-30 points, bar charts to 3-12 categories
 
+
+---
+
+## Integration Connect Cards
+
+When a user asks about connecting a platform, or you detect they need a data source that isn't connected:
+
+1. Call `list_available_data_sources` to get the catalog
+2. Find the relevant data source
+3. Emit an ```integration code block with the source metadata
+
+**Example:**
+```integration
+{"action":"connect","dataSourceId":"stripe","name":"Stripe","logoUrl":"/logos/stripe.png","category":"Finance","description":"Payment processing & subscriptions","metricCount":14}
+```
+
+**When to emit connect cards:**
+- User asks "connect Stripe" or "set up HubSpot"
+- You detect a missing data source while answering a metrics question
+- User asks "what can I connect?" (show multiple cards)
+
+**DO NOT** emit connect cards unprompted. Only when the user asks about connections or when a missing source is blocking their question.
+
 ## NEVER DO THIS
 
 - "No metric found" without searching first

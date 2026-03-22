@@ -370,4 +370,20 @@ export default function (api: any) {
       }
     },
   });
+
+  api.registerTool({
+    name: "list_available_data_sources",
+    description:
+      "List all available data source integrations (catalog) with connection status. Use to show users what they can connect or to check if a specific platform is available.",
+    parameters: {
+      type: "object",
+      properties: {
+        category: { type: "string", description: "Optional category filter (e.g., 'sales_crm', 'paid_ads', 'finance')" },
+      },
+      required: [],
+    },
+    async execute(_id: string, params: Record<string, unknown>) {
+      return callPrecision("list_available_data_sources", params);
+    },
+  });
 }
