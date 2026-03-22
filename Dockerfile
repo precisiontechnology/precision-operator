@@ -25,5 +25,8 @@ RUN npm pack @mem0/openclaw-mem0 && \
     rm mem0-openclaw-mem0-*.tgz && \
     cd /home/node/.openclaw-baked/workspace/plugins/openclaw-mem0 && npm install --omit=dev
 
+# Install precision plugin deps (S3 client for R2 screenshot uploads)
+RUN cd /home/node/.openclaw-baked/workspace/plugins/precision && npm install --omit=dev
+
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "openclaw.mjs", "gateway"]

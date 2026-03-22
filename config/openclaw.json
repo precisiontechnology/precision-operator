@@ -28,14 +28,16 @@
           "memory",
           "sessions"
         ]
-      }
+      },
+      "verboseDefault": "full"
     }
   },
   "tools": {
     "deny": [
       "gateway",
       "nodes",
-      "canvas"
+      "canvas",
+      "browser"
     ],
     "sessions": {
       "visibility": "all"
@@ -43,19 +45,13 @@
   },
   "skills": {
     "load": {
-      "extraDirs": ["/home/node/.openclaw-baked/workspace/skills"]
+      "extraDirs": [
+        "/home/node/.openclaw-baked/workspace/skills"
+      ]
     }
   },
   "browser": {
-    "enabled": true,
-    "attachOnly": true,
-    "defaultProfile": "browserless",
-    "profiles": {
-      "browserless": {
-        "cdpUrl": "wss://production-sfo.browserless.io?token=${BROWSERLESS_TOKEN}",
-        "color": "#00AA00"
-      }
-    }
+    "enabled": false
   },
   "messages": {
     "ackReactionScope": "group-mentions"
