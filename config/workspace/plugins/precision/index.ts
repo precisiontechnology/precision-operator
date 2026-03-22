@@ -1,40 +1,48 @@
 const BASE = process.env.PRECISION_API_URL || "https://operator-api.precision.co/api/v1/operator";
-const TOKEN = process.env.PRECISION_API_TOKEN;
+const GATEWAY_TOKEN = process.env.PRECISION_GATEWAY_TOKEN;
 
-// Per-session JWT extracted from sessionKey via before_agent_start hook
-let currentSessionToken: string | undefined;
+let currentUserId: string | undefined;
 
-function parseSessionKey(sessionKey: string | undefined): { accountId?: string; userId?: string; jwt?: string } {
-  if (!sessionKey) return {};
-  // Format: "<account_id>:<user_id>::<jwt>" (:: separates identity from token)
-  const doubleColonIdx = sessionKey.indexOf("::");
-  if (doubleColonIdx === -1) {
-    // Legacy format: "<account_id>:<user_id>"
-    const [accountId, userId] = sessionKey.split(":");
-    return { accountId, userId };
-  }
-  const identityPart = sessionKey.substring(0, doubleColonIdx);
-  const jwt = sessionKey.substring(doubleColonIdx + 2);
-  const [accountId, userId] = identityPart.split(":");
-  return { accountId, userId, jwt: jwt || undefined };
+function parseSessionKey(sessionKey: string): { accountId?: string; userId?: string } {
+  // OpenClaw prepends "agent:main:" to our sessionKey, so full format is:
+  // "agent:main:{account_id}:{user_id}::{ignored}" or "agent:main:{account_id}:{user_id}"
+  // UUIDs are case-insensitive so lowercasing is fine
+  const parts = sessionKey.split(":");
+  // Skip "agent" and "main" prefix, then account_id and user_id
+  // parts: ["agent", "main", account_uuid_part1, ..., user_uuid, ...]
+  // UUIDs contain hyphens not colons, so after "agent:main:" the next UUID is the account_id
+  const withoutPrefix = sessionKey.replace(/^agent:main:/, "");
+  const doubleColonIdx = withoutPrefix.indexOf("::");
+  const identityPart = doubleColonIdx === -1 ? withoutPrefix : withoutPrefix.substring(0, doubleColonIdx);
+  // identityPart = "account_uuid:user_uuid"
+  const colonIdx = identityPart.indexOf(":");
+  if (colonIdx === -1) return { accountId: identityPart };
+  const accountId = identityPart.substring(0, colonIdx);
+  const userId = identityPart.substring(colonIdx + 1);
+  return { accountId, userId };
 }
 
-async function callPrecision(endpoint: string, body: Record<string, unknown>, token?: string) {
-  const effectiveToken = token || currentSessionToken || TOKEN;
-  const url = `${BASE}/${endpoint}`;
-  console.log(`[precision-plugin] ${endpoint} → ${url}`);
-  console.log(`[precision-plugin] token source: ${token ? "explicit" : currentSessionToken ? "sessionKey JWT" : TOKEN ? "PRECISION_API_TOKEN env" : "NONE"}`);
-  console.log(`[precision-plugin] token preview: ${effectiveToken ? effectiveToken.substring(0, 20) + "..." : "undefined"}`);
-  if (!effectiveToken) {
-    return { content: [{ type: "text" as const, text: "Error: No authentication token available (no session JWT or PRECISION_API_TOKEN)." }] };
+async function callPrecision(endpoint: string, body: Record<string, unknown>) {
+  if (!GATEWAY_TOKEN) {
+    return { content: [{ type: "text" as const, text: "Error: PRECISION_GATEWAY_TOKEN not configured." }] };
   }
+
+  const url = `${BASE}/${endpoint}`;
+  const headers: Record<string, string> = {
+    "Authorization": `Bearer ${GATEWAY_TOKEN}`,
+    "Content-Type": "application/json",
+  };
+
+  if (currentUserId) {
+    headers["X-Operator-User-Id"] = currentUserId;
+  }
+
+  console.log(`[precision-plugin] ${endpoint} → ${url} (user: ${currentUserId || "none"})`);
+
   try {
     const res = await fetch(url, {
       method: "POST",
-      headers: {
-        "Authorization": `Bearer ${effectiveToken}`,
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(body),
     });
     const text = await res.text();
@@ -49,15 +57,13 @@ async function callPrecision(endpoint: string, body: Record<string, unknown>, to
 }
 
 export default function (api: any) {
-  api.on("before_agent_start", (event: any, ctx: any) => {
+  api.on("before_agent_start", (_event: any, ctx: any) => {
     const sessionKey = ctx?.sessionKey;
-    console.log(`[precision-plugin] before_agent_start sessionKey: ${sessionKey ? sessionKey.substring(0, 40) + "..." : "undefined"}`);
-    console.log(`[precision-plugin] ctx keys: ${ctx ? Object.keys(ctx).join(", ") : "no ctx"}`);
     if (!sessionKey) return;
-    const { jwt, accountId, userId } = parseSessionKey(sessionKey);
-    console.log(`[precision-plugin] parsed: account=${accountId}, user=${userId}, jwt=${jwt ? "present (" + jwt.length + " chars)" : "missing"}`);
-    if (jwt) {
-      currentSessionToken = jwt;
+    const { accountId, userId } = parseSessionKey(sessionKey);
+    console.log(`[precision-plugin] session: account=${accountId}, user=${userId}`);
+    if (userId) {
+      currentUserId = userId;
     }
   });
 
@@ -151,8 +157,6 @@ export default function (api: any) {
       return callPrecision("retrieve_kb_context", params);
     },
   });
-
-  // Zero-config metrics tools
 
   api.registerTool({
     name: "list_managed_queries",
