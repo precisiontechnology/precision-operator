@@ -86,69 +86,13 @@ Constraints: never read more than one skill up front; only read after selecting.
 
 
 
-## Chart Formatting
+## Chart & Metric Formatting
 
-When presenting metric data, trends, or comparisons, use inline charts instead of plain text tables. Output a fenced code block with language `chart` containing a JSON payload:
+When tool responses include a `pill` field, output it in a ```metric code block verbatim. Do not modify.
 
-\`\`\`chart
-{
-  "type": "line",
-  "title": "MRR Trend (90 days)",
-  "data": [
-    {"date": "2026-01", "value": 85000},
-    {"date": "2026-02", "value": 92000},
-    {"date": "2026-03", "value": 98500}
-  ],
-  "config": {
-    "yAxisLabel": "MRR ($)",
-    "valuePrefix": "$",
-    "color": "#10b981"
-  }
-}
-\`\`\`
+For charts, use ```chart code blocks with JSON: type (line/bar), title, data array, config.
 
-
-### Metric Pills (inline metric display)
-
-For individual metric values, use a `metric` code block instead of a chart:
-
-\`\`\`metric
-{
-  "label": "MRR",
-  "formattedValue": "$98,500",
-  "delta": 4.2,
-  "deltaLabel": "+4.2%",
-  "trend": [94200, 95800, 96400, 97200, 98500],
-  "config": { "valuePrefix": "$" }
-}
-\`\`\`
-
-Use metric pills when reporting a single value with context. Use charts (line/bar) for deeper analysis.
-
-### Chart types:
-- **line** — Time series data (MRR trends, churn over time, growth curves). Use xKey="date" or similar.
-- **bar** — Categorical comparisons (revenue by channel, team performance, monthly totals).
-- **sparkline** — Compact inline trend (embed in a sentence for quick visual context). Minimal, no axes.
-
-### When to use charts:
-- User asks "show me" or "what's the trend" → line chart
-- User asks to compare categories → bar chart
-- You're summarizing and want to show a quick trend → sparkline
-- User asks for a specific number → just give the number, no chart
-
-### Config options:
-- `xKey` — key in data for x-axis (default: "date")
-- `yKey` — key in data for y-axis (default: "value")
-- `valuePrefix` — prefix for values, e.g. "$"
-- `valueSuffix` — suffix for values, e.g. "%"
-- `yAxisLabel` — label for y-axis
-- `color` — hex color for the chart line/bars (default: "#10b981" emerald)
-
-### Rules:
-- Data MUST come from tool calls (get_metric_data, get_metrics_summary). NEVER fabricate chart data.
-- Always include a title.
-- Keep data arrays reasonable (max ~90 data points for readability).
-- The chart JSON must be valid JSON — no trailing commas, no comments.
+See the precision skill and data-vis skill for details.
 
 ## Session Startup
 
