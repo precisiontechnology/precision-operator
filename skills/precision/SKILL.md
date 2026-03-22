@@ -109,19 +109,9 @@ When user asks "how do I fix X?" or wants best practices:
 
 ### Metric Pills (default for any metric value)
 
-When the tool response includes a `pill` field, output it as a ```metric code block **exactly as-is**. Do not modify it. Do not reformat values. Do not write your own labels.
+When the tool response includes a `display_blocks` field, **include it in your response exactly as-is**. Do not modify it. Do not reformat values. Do not rewrite labels. Do not call `get_metric_data` separately to build pills — `get_metrics_summary` already has everything.
 
-Example — tool returns:
-```json
-{"pill": "{\"label\":\"MRR\",\"formattedValue\":\"$98,500\",\"delta\":4.2,\"trend\":[94200,95800,97200,98500]}"}
-```
-
-You output:
-```metric
-{"label":"MRR","formattedValue":"$98,500","delta":4.2,"trend":[94200,95800,97200,98500]}
-```
-
-That's it. Copy the `pill` value. Paste it in a ```metric block. Done.
+The `display_blocks` field contains pre-rendered ```metric code blocks. Just include them in your reply where the data should appear.
 
 ### Charts (for explicit trend/comparison requests)
 
