@@ -10,8 +10,13 @@ type PrecisionRequestContext = {
 
 function parseSessionKey(sessionKey: string): PrecisionRequestContext {
   const matches = sessionKey.match(UUID_PATTERN) || [];
+  const canonicalSessionKey =
+    matches.length >= 3
+      ? `${matches[0]}:${matches[1]}:${matches[2]}`
+      : sessionKey;
+
   return {
-    sessionKey,
+    sessionKey: canonicalSessionKey,
     accountId: matches[0],
     userId: matches[1],
   };
