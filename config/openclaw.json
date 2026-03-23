@@ -64,7 +64,7 @@
   },
   "channels": {
     "telegram": {
-      "enabled": true,
+      "enabled": false,
       "dmPolicy": "pairing",
       "groupPolicy": "allowlist",
       "streaming": "partial"
@@ -74,16 +74,18 @@
     "mode": "local",
     "bind": "lan",
     "port": 18789,
+    "trustedProxies": [
+      "10.0.0.0/8"
+    ],
     "auth": {
-      "mode": "token",
-      "token": "${PRECISION_ACCOUNT_ID}"
+      "mode": "trusted-proxy",
+      "trustedProxy": {
+        "userHeader": "x-precision-user-id"
+      }
     },
     "controlUi": {
-      "allowInsecureAuth": true,
-      "dangerouslyDisableDeviceAuth": true,
+      "enabled": true,
       "allowedOrigins": [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
         "https://operator.precision.co",
         "https://operator-staging.precision.co"
       ]

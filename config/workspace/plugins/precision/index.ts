@@ -1,7 +1,8 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
-const BASE = process.env.PRECISION_API_URL || "https://precision.ngrok.app/api/v1/operator";
-const TOKEN = process.env.PRECISION_API_TOKEN;
+const BASE = process.env.PRECISION_API_URL || "https://operator-api.precision.co/api/v1/operator_tools";
+const GATEWAY_TOKEN = process.env.PRECISION_GATEWAY_TOKEN;
+const UUID_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/gi;
 
 // Browserless REST API
 const BROWSERLESS_TOKEN = process.env.BROWSERLESS_TOKEN;
@@ -14,6 +15,26 @@ const R2_ACCESS_KEY = process.env.R2_ACCESS_KEY_ID;
 const R2_SECRET_KEY = process.env.R2_SECRET_ACCESS_KEY;
 const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || "";
 const ACCOUNT_ID = process.env.PRECISION_ACCOUNT_ID || "default";
+
+type PrecisionRequestContext = {
+  sessionKey?: string;
+  accountId?: string;
+  userId?: string;
+};
+
+function parseSessionKey(sessionKey: string): PrecisionRequestContext {
+  const matches = sessionKey.match(UUID_PATTERN) || [];
+  const canonicalSessionKey =
+    matches.length >= 3
+      ? `${matches[0]}:${matches[1]}:${matches[2]}`
+      : sessionKey;
+
+  return {
+    sessionKey: canonicalSessionKey,
+    accountId: matches[0],
+    userId: matches[1],
+  };
+}
 
 async function uploadToR2(data: Buffer, filename: string): Promise<string> {
   if (!R2_ENDPOINT || !R2_ACCESS_KEY || !R2_SECRET_KEY) {
@@ -31,17 +52,40 @@ async function uploadToR2(data: Buffer, filename: string): Promise<string> {
   return R2_PUBLIC_URL ? `${R2_PUBLIC_URL}/${key}` : `https://${R2_BUCKET}.${R2_ENDPOINT!.replace("https://","").replace("http://","")}/${key}`;
 }
 
-async function callPrecision(endpoint: string, body: Record<string, unknown>) {
-  if (!TOKEN) {
-    return { content: [{ type: "text" as const, text: "Error: PRECISION_API_TOKEN is not configured." }] };
+async function callPrecision(
+  endpoint: string,
+  body: Record<string, unknown>,
+  requestContext: PrecisionRequestContext
+) {
+  if (!GATEWAY_TOKEN) {
+    return { content: [{ type: "text" as const, text: "Error: PRECISION_GATEWAY_TOKEN not configured." }] };
   }
+
+  const url = `${BASE}/${endpoint}`;
+  const headers: Record<string, string> = {
+    "Authorization": `Bearer ${GATEWAY_TOKEN}`,
+    "Content-Type": "application/json",
+  };
+
+  if (requestContext.userId) {
+    headers["X-Operator-User-Id"] = requestContext.userId;
+  }
+  if (requestContext.accountId) {
+    headers["X-Operator-Account-Id"] = requestContext.accountId;
+  }
+  if (requestContext.sessionKey) {
+    headers["X-Operator-Session-Key"] = requestContext.sessionKey;
+  }
+
+  console.log(
+    `[precision-plugin] ${endpoint} → ${url} ` +
+      `(account: ${requestContext.accountId || "none"}, user: ${requestContext.userId || "none"})`
+  );
+
   try {
-    const res = await fetch(`${BASE}/${endpoint}`, {
+    const res = await fetch(url, {
       method: "POST",
-      headers: {
-        "Authorization": `Bearer ${TOKEN}`,
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(body),
     });
     const text = await res.text();
@@ -55,12 +99,51 @@ async function callPrecision(endpoint: string, body: Record<string, unknown>) {
   }
 }
 
+function resolveRequestContext(ctx: any): PrecisionRequestContext {
+  const sessionKey = typeof ctx?.sessionKey === "string" ? ctx.sessionKey.trim() : "";
+  const agentAccountId =
+    typeof ctx?.agentAccountId === "string" ? ctx.agentAccountId.trim() : "";
+
+  if (!sessionKey) {
+    return agentAccountId ? { accountId: agentAccountId } : {};
+  }
+
+  const requestContext = parseSessionKey(sessionKey);
+  if (!requestContext.accountId && agentAccountId) {
+    requestContext.accountId = agentAccountId;
+  }
+  return requestContext;
+}
+
+function registerPrecisionTool(
+  api: any,
+  endpoint: string,
+  description: string,
+  parameters: Record<string, unknown>
+) {
+  api.registerTool(
+    (ctx: any) => {
+      const requestContext = resolveRequestContext(ctx);
+
+      return {
+        name: endpoint,
+        description,
+        parameters,
+        async execute(_id: string, params: Record<string, unknown>) {
+          return callPrecision(endpoint, params, requestContext);
+        },
+      };
+    },
+    { name: endpoint }
+  );
+}
+
 export default function (api: any) {
-  api.registerTool({
-    name: "get_metrics_summary",
-    description:
-      "Search and retrieve business metrics by query. Use this FIRST whenever a user asks about any metric. Returns matching metrics with current values, trends, and status.",
-    parameters: {
+  registerPrecisionTool(
+    api,
+    "get_metrics_summary",
+    "Search and retrieve business metrics by query. Use this FIRST whenever a user asks about any metric. Returns matching metrics with current values, trends, and status.",
+    {
       type: "object",
       properties: {
         query: { type: "string", description: "Natural language search query (e.g. 'MRR', 'churn rate', 'revenue')" },
@@ -68,17 +151,14 @@ export default function (api: any) {
         limit: { type: "number", description: "Max number of results to return" },
       },
       required: ["query"],
-    },
-    async execute(_id: string, params: Record<string, unknown>) {
-      return callPrecision("get_metrics_summary", params);
-    },
-  });
+    }
+  );
 
-  api.registerTool({
-    name: "get_metric_data",
-    description:
-      "Get time-series data for a specific metric. Use after get_metrics_summary to pull trends over a date range.",
-    parameters: {
+  registerPrecisionTool(
+    api,
+    "get_metric_data",
+    "Get time-series data for a specific metric. Use after get_metrics_summary to pull trends over a date range.",
+    {
       type: "object",
       properties: {
         metric_id: { type: "string", description: "The metric ID from get_metrics_summary results" },
@@ -88,32 +168,27 @@ export default function (api: any) {
         time_expression: { type: "string", description: "Natural language time range (e.g. 'last 90 days')" },
       },
       required: ["metric_id"],
-    },
-    async execute(_id: string, params: Record<string, unknown>) {
-      return callPrecision("get_metric_data", params);
-    },
-  });
+    }
+  );
 
-  api.registerTool({
-    name: "get_metric_by_name",
-    description: "Look up a metric by its exact name. Use when you know the specific metric name.",
-    parameters: {
+  registerPrecisionTool(
+    api,
+    "get_metric_by_name",
+    "Look up a metric by its exact name. Use when you know the specific metric name.",
+    {
       type: "object",
       properties: {
         metric_name: { type: "string", description: "Exact metric name" },
       },
       required: ["metric_name"],
-    },
-    async execute(_id: string, params: Record<string, unknown>) {
-      return callPrecision("get_metric_by_name", params);
-    },
-  });
+    }
+  );
 
-  api.registerTool({
-    name: "explore_causality",
-    description:
-      "Trace upstream and downstream causal relationships for a metric. Use for 'why' questions — finds root causes (upstream) or downstream impact.",
-    parameters: {
+  registerPrecisionTool(
+    api,
+    "explore_causality",
+    "Trace upstream and downstream causal relationships for a metric. Use for 'why' questions — finds root causes (upstream) or downstream impact.",
+    {
       type: "object",
       properties: {
         metric_id: { type: "string", description: "The metric ID to explore" },
@@ -125,81 +200,66 @@ export default function (api: any) {
         depth: { type: "number", description: "How many levels deep to trace (default: 2)" },
       },
       required: ["metric_id"],
-    },
-    async execute(_id: string, params: Record<string, unknown>) {
-      return callPrecision("explore_causality", params);
-    },
-  });
+    }
+  );
 
-  api.registerTool({
-    name: "retrieve_kb_context",
-    description:
-      "Search the Precision knowledge base for playbooks, best practices, and growth strategies. Use for 'how to fix' questions after diagnosing with metrics and causality.",
-    parameters: {
+  registerPrecisionTool(
+    api,
+    "retrieve_kb_context",
+    "Search the Precision knowledge base for playbooks, best practices, and growth strategies. Use for 'how to fix' questions after diagnosing with metrics and causality.",
+    {
       type: "object",
       properties: {
         query: { type: "string", description: "What to search for (e.g. 'improve trial to paid conversion', 'reduce churn')" },
       },
       required: ["query"],
-    },
-    async execute(_id: string, params: Record<string, unknown>) {
-      return callPrecision("retrieve_kb_context", params);
-    },
-  });
+    }
+  );
 
   // Zero-config metrics tools
 
-  api.registerTool({
-    name: "list_data_source_connections",
-    description:
-      "List all connected data sources/integrations for this account. Use this FIRST when user asks about integrations, connected platforms, data sources, or what systems are syncing. Returns connection IDs needed for other zero-config tools. IMPORTANT: Always format results as a markdown table with columns: Integration | Status | Metrics | Last Sync | Health. Use ✅ for healthy, ⏳ for syncing, ⚠️ for errors.",
-    parameters: {
+  registerPrecisionTool(
+    api,
+    "list_data_source_connections",
+    "List all connected data sources/integrations for this account. Use this FIRST when user asks about integrations, connected platforms, data sources, or what systems are syncing. Returns connection IDs needed for other zero-config tools. IMPORTANT: Always format results as a markdown table with columns: Integration | Status | Metrics | Last Sync | Health. Use ✅ for healthy, ⏳ for syncing, ⚠️ for errors.",
+    {
       type: "object",
       properties: {},
       required: [],
-    },
-    async execute(_id: string, params: Record<string, unknown>) {
-      return callPrecision("list_data_source_connections", params);
-    },
-  });
+    }
+  );
 
-  api.registerTool({
-    name: "list_managed_queries",
-    description:
-      "List available metric templates (managed queries) for a connected data source. Use this to discover what metrics CAN BE tracked from an integration like HubSpot, Stripe, etc.",
-    parameters: {
+  registerPrecisionTool(
+    api,
+    "list_managed_queries",
+    "List available metric templates (managed queries) for a connected data source. Use this to discover what metrics CAN BE tracked from an integration like HubSpot, Stripe, etc.",
+    {
       type: "object",
       properties: {
         connection_id: { type: "string", description: "Data source connection ID" },
       },
       required: ["connection_id"],
-    },
-    async execute(_id: string, params: Record<string, unknown>) {
-      return callPrecision("list_managed_queries", params);
-    },
-  });
+    }
+  );
 
-  api.registerTool({
-    name: "list_metrics_by_connection",
-    description:
-      "List metrics CURRENTLY BEING TRACKED from a specific integration. Use when user asks 'what am I tracking from HighLevel/Stripe/HubSpot?' Returns active metrics with current values, filters applied, and sync status.",
-    parameters: {
+  registerPrecisionTool(
+    api,
+    "list_metrics_by_connection",
+    "List metrics CURRENTLY BEING TRACKED from a specific integration. Use when user asks 'what am I tracking from HighLevel/Stripe/HubSpot?' Returns active metrics with current values, filters applied, and sync status.",
+    {
       type: "object",
       properties: {
         connection_id: { type: "string", description: "Data source connection ID (from list_data_source_connections)" },
       },
       required: ["connection_id"],
-    },
-    async execute(_id: string, params: Record<string, unknown>) {
-      return callPrecision("list_metrics_by_connection", params);
-    },
-  });
+    }
+  );
 
-  api.registerTool({
-    name: "get_filter_options",
-    description:
-      "Get available filter options (dropdown values) for a specific field on a managed query. Use this when creating a metric with filters to know what values are available (e.g., deal stages, users, pipelines).",
-    parameters: {
+  registerPrecisionTool(
+    api,
+    "get_filter_options",
+    "Get available filter options (dropdown values) for a specific field on a managed query. Use this when creating a metric with filters to know what values are available (e.g., deal stages, users, pipelines).",
+    {
       type: "object",
       properties: {
         managed_query_id: { type: "string", description: "Managed query ID" },
@@ -207,79 +267,56 @@ export default function (api: any) {
         connection_id: { type: "string", description: "Data source connection ID" },
       },
       required: ["managed_query_id", "field", "connection_id"],
-    },
-    async execute(_id: string, params: Record<string, unknown>) {
-      return callPrecision("get_filter_options", params);
-    },
-  });
+    }
+  );
 
-  api.registerTool({
-    name: "list_teams",
-    description:
-      "List all teams for the account with their DRI (directly responsible individual), members, and current metrics. Use this FIRST when user mentions a team by name — resolves team name to team_id needed for create_metric.",
-    parameters: {
+  registerPrecisionTool(
+    api,
+    "list_teams",
+    "List all teams for the account with their DRI (directly responsible individual), members, and current metrics. Use this FIRST when user mentions a team by name — resolves team name to team_id needed for create_metric.",
+    {
       type: "object",
       properties: {
         name: { type: "string", description: "Filter by team name (case-insensitive partial match)" },
       },
       required: [],
-    },
-    async execute(_id: string, params: Record<string, unknown>) {
-      return callPrecision("list_teams", params);
-    },
-  });
+    }
+  );
 
-  api.registerTool({
-    name: "create_metric",
-    description:
-      "Create a new metric from a metric definition template. Requires UUIDs from other tools: list_teams for team_id, list_managed_queries for metric_definition_id, list_data_source_connections for connection_id. For filters, use get_filter_options to see available values, then pass simple filters array. Multiple values in one field = OR, multiple fields = AND. For complex nested AND/OR groupings, create without filters and tell user to configure manually in Settings.",
-    parameters: {
+  registerPrecisionTool(
+    api,
+    "create_metric",
+    "Create a new metric from a metric definition template. Requires UUIDs from other tools: list_teams for team_id, list_managed_queries for metric_definition_id, list_data_source_connections for connection_id. For filters, use get_filter_options to see available values, then pass simple filters array. Multiple values in one field = OR, multiple fields = AND.",
+    {
       type: "object",
       properties: {
         metric_definition_id: { type: "string", description: "Metric definition UUID (from list_managed_queries)" },
         team_id: { type: "string", description: "Team UUID (from list_teams)" },
         connection_id: { type: "string", description: "Data source connection ID (required for integration metrics)" },
         name: { type: "string", description: "Custom name for the metric (optional)" },
-        filters: { 
+        filters: {
           type: "array",
           description: "STRICT FORMAT: [{\"field\": \"field_name\", \"values\": [\"val1\", \"val2\"]}]. Use 'values' (array), NOT 'value' (string). Do NOT use nested structures like {root: {conditions: []}}.",
           items: {
             type: "object",
             properties: {
               field: { type: "string", description: "Field name from get_filter_options" },
-              values: { type: "array", items: { type: "string" }, description: "Array of values (even for single value)" }
+              values: { type: "array", items: { type: "string" }, description: "Array of values (even for single value)" },
             },
             required: ["field", "values"],
-            additionalProperties: false
-          }
+            additionalProperties: false,
+          },
         },
       },
       required: ["metric_definition_id", "team_id"],
-    },
-    async execute(_id: string, params: Record<string, unknown>) {
-      // Validate filters format before sending
-      const filters = params.filters as Array<{field?: string; values?: string[]}> | undefined;
-      if (filters && Array.isArray(filters)) {
-        for (const f of filters) {
-          if (!f.field || !Array.isArray(f.values)) {
-            return { 
-              content: [{ 
-                type: "text" as const, 
-                text: `Invalid filter format. Each filter must have "field" (string) and "values" (array). Got: ${JSON.stringify(f)}. Correct format: {"field": "item_product_id", "values": ["prod_123"]}` 
-              }] 
-            };
-          }
-        }
-      }
-      return callPrecision("create_metric", params);
-    },
-  });
+    }
+  );
 
-  api.registerTool({
-    name: "get_underlying_data",
-    description:
-      "Get the individual records behind a metric value. Use this to drill into the details and understand what's driving a number (e.g., see the actual deals that make up 'Deals Won').",
-    parameters: {
+  registerPrecisionTool(
+    api,
+    "get_underlying_data",
+    "Get the individual records behind a metric value. Use this to drill into the details and understand what's driving a number (e.g., see the actual deals that make up 'Deals Won').",
+    {
       type: "object",
       properties: {
         metric_id: { type: "string", description: "Metric ID" },
@@ -288,11 +325,8 @@ export default function (api: any) {
         per_page: { type: "number", description: "Records per page (default: 25, max: 100)" },
       },
       required: ["metric_id", "date"],
-    },
-    async execute(_id: string, params: Record<string, unknown>) {
-      return callPrecision("get_underlying_data", params);
-    },
-  });
+    }
+  );
 
   // Screenshot tool — calls Browserless REST API directly, uploads to R2, returns URL
   api.registerTool({
@@ -324,7 +358,6 @@ export default function (api: any) {
       const waitFor = (params.wait_for as number) || 3000;
 
       try {
-        // Build Browserless /screenshot request
         const body: Record<string, unknown> = {
           url: targetUrl,
           options: {
@@ -351,11 +384,9 @@ export default function (api: any) {
           return { content: [{ type: "text" as const, text: `Screenshot failed (${res.status}): ${errText}` }] };
         }
 
-        // Response is the PNG binary
         const pngBuffer = Buffer.from(await res.arrayBuffer());
         const filename = `screenshot-${Date.now()}.png`;
 
-        // Upload to R2
         const publicUrl = await uploadToR2(pngBuffer, filename);
 
         return {
@@ -371,19 +402,16 @@ export default function (api: any) {
     },
   });
 
-  api.registerTool({
-    name: "list_available_data_sources",
-    description:
-      "List available data source integrations with connection status. Each source includes a pre-built `integration_block`. IMPORTANT: Do NOT paste integration_blocks in your response unless the user has named a SPECIFIC source to connect. If the user asks what's available, summarize the list as text and ask which one they want. Only paste ONE integration_block at a time, only after the user chooses.",
-    parameters: {
+  registerPrecisionTool(
+    api,
+    "list_available_data_sources",
+    "List available data source integrations with connection status. Each source includes a pre-built `integration_block`. IMPORTANT: Do NOT paste integration_blocks in your response unless the user has named a SPECIFIC source to connect. If the user asks what's available, summarize the list as text and ask which one they want. Only paste ONE integration_block at a time, only after the user chooses.",
+    {
       type: "object",
       properties: {
         category: { type: "string", description: "Optional category filter (e.g., 'sales_crm', 'paid_ads', 'finance')" },
       },
       required: [],
-    },
-    async execute(_id: string, params: Record<string, unknown>) {
-      return callPrecision("list_available_data_sources", params);
-    },
-  });
+    }
+  );
 }

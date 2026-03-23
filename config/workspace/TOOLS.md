@@ -3,8 +3,8 @@
 _Per-instance configuration notes. Base image ships empty._
 
 ## Precision API
-- Endpoint: https://precision.ngrok.app/api/v1/operator
-- Auth: Bearer token via PRECISION_API_TOKEN env var
+- Endpoint: https://operator-api.precision.co/api/v1/operator_tools
+- Auth: Bearer token via PRECISION_GATEWAY_TOKEN env var
 
 ## Channels
 _(Note connected channels per-instance: Telegram bot, Slack workspace, etc.)_
