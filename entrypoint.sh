@@ -5,10 +5,10 @@ mkdir -p /home/node/.openclaw/workspace
 
 cp /home/node/.openclaw-baked/openclaw.json /home/node/.openclaw/openclaw.json
 
-# Set gateway auth token from account ID if provided
+# Substitute PRECISION_ACCOUNT_ID into config (used by mem0 plugin)
 if [ -n "$PRECISION_ACCOUNT_ID" ]; then
   sed -i "s/\${PRECISION_ACCOUNT_ID}/$PRECISION_ACCOUNT_ID/g" /home/node/.openclaw/openclaw.json
-  echo "[entrypoint] gateway token set from PRECISION_ACCOUNT_ID"
+  echo "[entrypoint] PRECISION_ACCOUNT_ID substituted into config"
 fi
 
 cp /home/node/.openclaw-baked/exec-approvals.json /home/node/.openclaw/exec-approvals.json
