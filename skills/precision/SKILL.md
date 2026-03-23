@@ -102,6 +102,36 @@ When user asks "how do I fix X?" or wants best practices:
 
 ---
 
+
+---
+
+## Visual Context: Metric Pills & Charts
+
+### Metric Pills (default for any metric value)
+
+When the tool response includes a `display_blocks` field, **include it in your response exactly as-is**. Do not modify it. Do not reformat values. Do not rewrite labels. Do not call `get_metric_data` separately to build pills — `get_metrics_summary` already has everything.
+
+The `display_blocks` field contains pre-rendered ```metric code blocks. Just include them in your reply where the data should appear.
+
+### Charts (for explicit trend/comparison requests)
+
+When user asks "show me the trend" or "compare X vs Y", use a ```chart block with data from `get_metric_data`:
+
+**Line chart** (trends):
+```chart
+{"type":"line","title":"MRR (Last 90 Days)","data":[{"date":"2026-01","value":85000},...],"config":{"valuePrefix":"$","color":"#10b981"}}
+```
+
+**Bar chart** (comparisons):
+```chart
+{"type":"bar","title":"Revenue by Channel","data":[{"channel":"Organic","value":42000},...],"config":{"xKey":"channel","valuePrefix":"$"}}
+```
+
+Rules:
+- Data MUST come from tools — never fabricate
+- Default color: #10b981 (emerald)
+- Keep line charts to 7-30 points, bar charts to 3-12 categories
+
 ## NEVER DO THIS
 
 - "No metric found" without searching first

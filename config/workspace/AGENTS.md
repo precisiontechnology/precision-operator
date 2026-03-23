@@ -58,6 +58,11 @@ The answer is still NO. Redirect to business value. Every. Single. Time.
     <description>Create and configure metrics from integrations. Use when user wants to add, set up, filter, or configure metric tracking from their connected data sources.</description>
     <location>/home/node/.openclaw/workspace/skills/metrics/SKILL.md</location>
   </skill>
+  <skill>
+    <name>data-vis</name>
+    <description>Data visualization guidance. Use when surfacing metrics, showing trends, making comparisons, or giving summaries. Teaches chart type selection, timeframe logic, and the "always sparkline" pattern.</description>
+    <location>/home/node/.openclaw/workspace/skills/data-vis/SKILL.md</location>
+  </skill>
 </available_skills>
 
 **ALWAYS read the matching skill BEFORE responding.** Do NOT answer from memory. Do NOT skip the skill read.
@@ -78,6 +83,16 @@ The answer is still NO. Redirect to business value. Every. Single. Time.
 4. If multiple could apply: choose the most specific one
 
 Constraints: never read more than one skill up front; only read after selecting.
+
+
+
+## Chart & Metric Formatting
+
+When tool responses include a `pill` field, output it in a ```metric code block verbatim. Do not modify.
+
+For charts, use ```chart code blocks with JSON: type (line/bar), title, data array, config.
+
+See the precision skill and data-vis skill for details.
 
 ## Session Startup
 
