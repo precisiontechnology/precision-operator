@@ -7,8 +7,8 @@ COPY config/workspace/ /home/node/.openclaw-baked/workspace/
 COPY config/openclaw.json /home/node/.openclaw-baked/openclaw.json
 COPY config/exec-approvals.json /home/node/.openclaw-baked/exec-approvals.json
 
-# Copy skills
-COPY skills/ /app/skills/
+# Copy skills to the baked workspace location where OpenClaw discovers them
+COPY skills/ /home/node/.openclaw-baked/workspace/skills/
 
 # Fix ownership BEFORE switching to node
 RUN chown -R node:node /home/node/.openclaw-baked

@@ -186,14 +186,40 @@ export default function (api: any) {
     }
   );
 
+  // Zero-config metrics tools
+
+  registerPrecisionTool(
+    api,
+    "list_data_source_connections",
+    "List all connected data sources/integrations for this account. Use this FIRST when user asks about integrations, connected platforms, data sources, or what systems are syncing. Returns connection IDs needed for other zero-config tools. IMPORTANT: Always format results as a markdown table with columns: Integration | Status | Metrics | Last Sync | Health. Use ✅ for healthy, ⏳ for syncing, ⚠️ for errors.",
+    {
+      type: "object",
+      properties: {},
+      required: [],
+    }
+  );
+
   registerPrecisionTool(
     api,
     "list_managed_queries",
-    "List available metric templates (managed queries) for a connected data source. Use this to discover what metrics can be tracked from an integration like HubSpot, Stripe, etc.",
+    "List available metric templates (managed queries) for a connected data source. Use this to discover what metrics CAN BE tracked from an integration like HubSpot, Stripe, etc.",
     {
       type: "object",
       properties: {
         connection_id: { type: "string", description: "Data source connection ID" },
+      },
+      required: ["connection_id"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "list_metrics_by_connection",
+    "List metrics CURRENTLY BEING TRACKED from a specific integration. Use when user asks 'what am I tracking from HighLevel/Stripe/HubSpot?' Returns active metrics with current values, filters applied, and sync status.",
+    {
+      type: "object",
+      properties: {
+        connection_id: { type: "string", description: "Data source connection ID (from list_data_source_connections)" },
       },
       required: ["connection_id"],
     }
@@ -216,18 +242,40 @@ export default function (api: any) {
 
   registerPrecisionTool(
     api,
-    "create_metric",
-    "Create a new metric from a metric definition template. Use this to add a metric to the account's scorecard. Can include filter selections to narrow the data (e.g., only closed-won deals from a specific rep).",
+    "list_teams",
+    "List all teams for the account with their DRI (directly responsible individual), members, and current metrics. Use this FIRST when user mentions a team by name — resolves team name to team_id needed for create_metric.",
     {
       type: "object",
       properties: {
-        metric_definition_id: { type: "string", description: "Metric definition ID to create from" },
-        team_id: { type: "string", description: "Team ID to add the metric to" },
+        name: { type: "string", description: "Filter by team name (case-insensitive partial match)" },
+      },
+      required: [],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "create_metric",
+    "Create a new metric from a metric definition template. Requires UUIDs from other tools: list_teams for team_id, list_managed_queries for metric_definition_id, list_data_source_connections for connection_id. For filters, use get_filter_options to see available values, then pass simple filters array. Multiple values in one field = OR, multiple fields = AND.",
+    {
+      type: "object",
+      properties: {
+        metric_definition_id: { type: "string", description: "Metric definition UUID (from list_managed_queries)" },
+        team_id: { type: "string", description: "Team UUID (from list_teams)" },
         connection_id: { type: "string", description: "Data source connection ID (required for integration metrics)" },
         name: { type: "string", description: "Custom name for the metric (optional)" },
-        filter_selections: {
-          type: "object",
-          description: "Filter configuration with root conditions (optional)",
+        filters: {
+          type: "array",
+          description: "STRICT FORMAT: [{\"field\": \"field_name\", \"values\": [\"val1\", \"val2\"]}]. Use 'values' (array), NOT 'value' (string). Do NOT use nested structures like {root: {conditions: []}}.",
+          items: {
+            type: "object",
+            properties: {
+              field: { type: "string", description: "Field name from get_filter_options" },
+              values: { type: "array", items: { type: "string" }, description: "Array of values (even for single value)" },
+            },
+            required: ["field", "values"],
+            additionalProperties: false,
+          },
         },
       },
       required: ["metric_definition_id", "team_id"],
