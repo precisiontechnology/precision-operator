@@ -370,4 +370,20 @@ export default function (api: any) {
       }
     },
   });
+
+  api.registerTool({
+    name: "list_available_data_sources",
+    description:
+      "List available data source integrations with connection status. Each source includes a pre-built `integration_block`. IMPORTANT: Do NOT paste integration_blocks in your response unless the user has named a SPECIFIC source to connect. If the user asks what's available, summarize the list as text and ask which one they want. Only paste ONE integration_block at a time, only after the user chooses.",
+    parameters: {
+      type: "object",
+      properties: {
+        category: { type: "string", description: "Optional category filter (e.g., 'sales_crm', 'paid_ads', 'finance')" },
+      },
+      required: [],
+    },
+    async execute(_id: string, params: Record<string, unknown>) {
+      return callPrecision("list_available_data_sources", params);
+    },
+  });
 }
