@@ -28,14 +28,16 @@
           "memory",
           "sessions"
         ]
-      }
+      },
+      "verboseDefault": "full"
     }
   },
   "tools": {
     "deny": [
       "gateway",
       "nodes",
-      "canvas"
+      "canvas",
+      "browser"
     ],
     "sessions": {
       "visibility": "all"
@@ -49,15 +51,7 @@
     }
   },
   "browser": {
-    "enabled": true,
-    "attachOnly": true,
-    "defaultProfile": "browserless",
-    "profiles": {
-      "browserless": {
-        "cdpUrl": "wss://production-sfo.browserless.io?token=${BROWSERLESS_TOKEN}",
-        "color": "#00AA00"
-      }
-    }
+    "enabled": false
   },
   "messages": {
     "ackReactionScope": "group-mentions"
@@ -81,7 +75,12 @@
     "bind": "lan",
     "port": 18789,
     "trustedProxies": [
-      "10.0.0.0/8"
+      "10.0.0.0/8",
+      "127.0.0.0/8",
+      "localhost",
+      "127.0.0.1",
+      "172.16.0.0/12",
+      "192.168.65.0/24"
     ],
     "auth": {
       "mode": "trusted-proxy",

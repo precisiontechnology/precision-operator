@@ -1,6 +1,20 @@
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+
 const BASE = process.env.PRECISION_API_URL || "https://operator-api.precision.co/api/v1/operator_tools";
 const GATEWAY_TOKEN = process.env.PRECISION_GATEWAY_TOKEN;
 const UUID_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/gi;
+
+// Browserless REST API
+const BROWSERLESS_TOKEN = process.env.BROWSERLESS_TOKEN;
+const BROWSERLESS_URL = "https://production-sfo.browserless.io";
+
+// R2 config
+const R2_BUCKET = process.env.R2_BUCKET || "precision-media";
+const R2_ENDPOINT = process.env.R2_ENDPOINT;
+const R2_ACCESS_KEY = process.env.R2_ACCESS_KEY_ID;
+const R2_SECRET_KEY = process.env.R2_SECRET_ACCESS_KEY;
+const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || "";
+const ACCOUNT_ID = process.env.PRECISION_ACCOUNT_ID || "default";
 
 type PrecisionRequestContext = {
   sessionKey?: string;
@@ -20,6 +34,22 @@ function parseSessionKey(sessionKey: string): PrecisionRequestContext {
     accountId: matches[0],
     userId: matches[1],
   };
+}
+
+async function uploadToR2(data: Buffer, filename: string): Promise<string> {
+  if (!R2_ENDPOINT || !R2_ACCESS_KEY || !R2_SECRET_KEY) {
+    throw new Error("R2 credentials not configured");
+  }
+  const key = `claudia/${ACCOUNT_ID}/media/${Date.now()}-${filename}`;
+  const s3 = new S3Client({
+    region: "auto",
+    endpoint: R2_ENDPOINT,
+    credentials: { accessKeyId: R2_ACCESS_KEY, secretAccessKey: R2_SECRET_KEY },
+  });
+  await s3.send(new PutObjectCommand({
+    Bucket: R2_BUCKET, Key: key, Body: data, ContentType: "image/png",
+  }));
+  return R2_PUBLIC_URL ? `${R2_PUBLIC_URL}/${key}` : `https://${R2_BUCKET}.${R2_ENDPOINT!.replace("https://","").replace("http://","")}/${key}`;
 }
 
 async function callPrecision(
@@ -295,6 +325,93 @@ export default function (api: any) {
         per_page: { type: "number", description: "Records per page (default: 25, max: 100)" },
       },
       required: ["metric_id", "date"],
+    }
+  );
+
+  // Screenshot tool — calls Browserless REST API directly, uploads to R2, returns URL
+  api.registerTool({
+    name: "take_screenshot",
+    description:
+      "Take a screenshot of any webpage. Returns a public image URL. Use when user asks to screenshot, capture, or show them any webpage. Always include the returned URL as a markdown image in your response: ![Screenshot](url)",
+    parameters: {
+      type: "object",
+      properties: {
+        url: { type: "string", description: "The URL to screenshot" },
+        full_page: { type: "boolean", description: "Capture the full scrollable page (default: false, viewport only)" },
+        selector: { type: "string", description: "CSS selector to screenshot a specific element (e.g. '#hero', '.pricing-table')" },
+        width: { type: "number", description: "Viewport width in pixels (default: 1920)" },
+        height: { type: "number", description: "Viewport height in pixels (default: 1080)" },
+        wait_for: { type: "number", description: "Milliseconds to wait after page load before capturing (default: 3000)" },
+      },
+      required: ["url"],
+    },
+    async execute(_id: string, params: Record<string, unknown>) {
+      if (!BROWSERLESS_TOKEN) {
+        return { content: [{ type: "text" as const, text: "Error: BROWSERLESS_TOKEN is not configured." }] };
+      }
+
+      const targetUrl = params.url as string;
+      const fullPage = (params.full_page as boolean) || false;
+      const selector = params.selector as string | undefined;
+      const width = (params.width as number) || 1920;
+      const height = (params.height as number) || 1080;
+      const waitFor = (params.wait_for as number) || 3000;
+
+      try {
+        const body: Record<string, unknown> = {
+          url: targetUrl,
+          options: {
+            fullPage,
+            type: "png",
+          },
+          viewport: { width, height },
+          waitForTimeout: waitFor,
+          gotoOptions: { waitUntil: "networkidle2", timeout: 30000 },
+        };
+
+        if (selector) {
+          body.selector = selector;
+        }
+
+        const res = await fetch(`${BROWSERLESS_URL}/screenshot?token=${BROWSERLESS_TOKEN}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          return { content: [{ type: "text" as const, text: `Screenshot failed (${res.status}): ${errText}` }] };
+        }
+
+        const pngBuffer = Buffer.from(await res.arrayBuffer());
+        const filename = `screenshot-${Date.now()}.png`;
+
+        const publicUrl = await uploadToR2(pngBuffer, filename);
+
+        return {
+          content: [{
+            type: "text" as const,
+            text: `Screenshot captured successfully.\n\nImage URL: ${publicUrl}\n\nInclude this in your response:\n![Screenshot](${publicUrl})`,
+          }],
+        };
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        return { content: [{ type: "text" as const, text: `Screenshot failed: ${message}` }] };
+      }
+    },
+  });
+
+  registerPrecisionTool(
+    api,
+    "list_available_data_sources",
+    "List available data source integrations with connection status. Each source includes a pre-built `integration_block`. IMPORTANT: Do NOT paste integration_blocks in your response unless the user has named a SPECIFIC source to connect. If the user asks what's available, summarize the list as text and ask which one they want. Only paste ONE integration_block at a time, only after the user chooses.",
+    {
+      type: "object",
+      properties: {
+        category: { type: "string", description: "Optional category filter (e.g., 'sales_crm', 'paid_ads', 'finance')" },
+      },
+      required: [],
     }
   );
 }
