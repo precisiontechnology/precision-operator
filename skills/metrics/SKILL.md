@@ -1,6 +1,6 @@
 ---
 name: metrics
-description: Create and configure metrics from integrations. Use when user wants to add, set up, filter, or configure metric tracking from their connected data sources.
+description: Create and configure metrics. Supports integration (from data sources), direct entry (manual), and calculated (formula) types. Use when user wants to add, set up, filter, configure, or create metrics of any kind.
 ---
 
 # Metrics Configuration Skill
@@ -13,101 +13,52 @@ Trigger on:
 - "Add a metric filtered by..."
 - "Configure [metric name]"
 - "Track [metric] by [filter]"
+- "Create a manual metric..." / "I'll update it myself"
+- "Create a calculated metric..." / "metric that adds/divides/multiplies..."
+- "Give me a metric that computes..."
+
+---
+
+## Metric Types Overview
+
+There are three types of metrics. Determine which type to use from user intent:
+
+| Type | When to use | Key fields |
+|------|------------|------------|
+| **integration** | Metric pulled automatically from a connected data source (Stripe, HubSpot, etc.) | metric_definition_id, connection_id |
+| **direct_entry** | User manually enters values (NPS, survey results, anything they track themselves) | name, unit, direction, measurement_frequency |
+| **calculated** | Auto-computed formula referencing other existing metrics (Conversion Rate = Demos / MQLs) | name, formula_expression or calculation_formula |
+
+**If the user says "I'll update it manually", "I'll enter it weekly", "it's a number we track ourselves" → direct_entry.**
+**If the user says "it's X divided by Y", "add these two metrics", "compute from other metrics" → calculated.**
+**If it comes from a data source connection → integration.**
 
 ---
 
 ## BEFORE Creating Any Metric
 
-### Step 1: Exhaustive Search Protocol (MANDATORY)
+### Step 1: Exhaustive Search Protocol (MANDATORY for ALL types)
 
 **NEVER say "metric doesn't exist" until you've completed ALL of these:**
 
 ```
 1. get_metrics_summary("exact name user mentioned")
-2. get_metrics_summary("key term") — try 2-3 variations (e.g., "customers", "subscribers", "active")
-3. get_metric_by_name("exact name") — this is more precise than summary
-4. get_metric_by_name("partial name") — try the product/program name alone
+2. get_metrics_summary("key term") — try 2-3 variations
+3. get_metric_by_name("exact name")
+4. get_metric_by_name("partial name")
 ```
 
-**Search harder before saying "not found."** If user asks for "Growth Accelerator customers":
-- ❌ WRONG: Search "growth accelerator customers" once → "not found"
-- ✅ RIGHT: Search "growth accelerator customers", "customers", "active subscribers", "growth accelerator" via BOTH summary AND by_name
-
-**Only after 3+ search attempts across both tools can you say a metric doesn't exist.**
+Only after 3+ search attempts can you say a metric doesn't exist.
 
 When you DO find matches:
 - Show user any similar metrics that already exist
-- Ask: "I found these existing metrics - do any of these work, or should I create a new one?"
-
-### Step 2: Confirm Filter Criteria
-
-**ALWAYS tell the user exactly what you're filtering on before creating.**
-
-Example confirmation:
-> "I'll create **Active Subscribers** filtered by:
-> - **Product:** Growth Accelerator (prod_U0JKzTHxBgZcqT)
-> 
-> This will count only subscribers on the Growth Accelerator program, excluding SaaS Academy and other products. Confirm?"
-
-### Step 3: Gather Required Settings
-
-Before creating, you MUST know:
-
-| Setting | Options | Guidance |
-|---------|---------|----------|
-| **Aggregation** | sum, latest, average | See guidance below |
-| **Pacing Type** | linear_growth, direct_comparison | See guidance below |
-| **Direction** | more_is_better, less_is_better | What does success look like? |
+- Ask: "I found these existing metrics — do any of these work, or should I create a new one?"
 
 ---
 
-## Aggregation Guidance
+## Workflow by Type
 
-**Use `latest` for:**
-- Percentages (conversion rate, close rate, churn rate)
-- MRR / ARR / recurring revenue
-- Active subscribers / customer counts
-- Balance-type metrics (what's the current state?)
-
-**Use `sum` for:**
-- Leads generated
-- Deals closed (count)
-- Cash collected
-- New sales
-- Flow-type metrics (what happened this period?)
-
-**Use `average` for:**
-- Average deal size
-- Average response time
-- NPS score
-- Rating-type metrics
-
-**Rule of thumb:** If you're counting "how many total right now" → latest. If you're counting "how many this week/month" → sum.
-
----
-
-## Pacing Type Guidance
-
-**Use `linear_growth` for:**
-- Cumulative metrics that grow over time
-- MRR, ARR, total customers
-- Metrics where you expect steady progress toward a target
-
-**Use `direct_comparison` for:**
-- Period-over-period metrics
-- This week vs last week
-- Metrics where you compare snapshots, not growth
-
----
-
-## Direction Guidance
-
-**`more_is_better`:** Revenue, customers, leads, conversion rates, NPS
-**`less_is_better`:** Churn, refunds, support tickets, response time, CAC
-
----
-
-## Metric Creation Workflow
+### Integration Metrics (from data source)
 
 ```
 1. list_data_source_connections → Get connection_id
@@ -115,14 +66,84 @@ Before creating, you MUST know:
 3. get_metrics_summary → Check for existing/similar metrics
 4. [If filters needed] get_filter_options(managed_query_id, field, connection_id)
 5. CONFIRM with user: filters + aggregation + pacing + direction
-6. create_metric(metric_definition_id, team_id, connection_id, name, filters)
+6. create_metric(data_type: "integration", metric_definition_id, team_id, connection_id, name, filters)
 ```
+
+### Direct Entry Metrics (manual)
+
+```
+1. get_metrics_summary → Check for existing/similar metrics
+2. Determine: unit, direction, measurement_frequency (ask if unclear)
+3. CONFIRM with user: name + all settings
+4. create_metric(data_type: "direct_entry", name, team_id, unit, direction, measurement_frequency)
+```
+
+No connection or definition needed. User will enter values manually via scorecard.
+
+Required fields to gather before creating:
+- `name` — clear, descriptive metric name
+- `unit` — integer, decimal, percentage, currency, minutes, hours, days
+- `direction` — more_is_better or less_is_better
+- `measurement_frequency` — daily, weekly, monthly
+
+### Calculated Metrics (formula)
+
+```
+1. get_metrics_summary → Find the metrics referenced in the formula
+2. Confirm metric names match exactly what exists
+3. CONFIRM formula with user before creating
+4. create_metric(data_type: "calculated", name, team_id, formula_expression: "MQLs + SQLs")
+```
+
+Use `formula_expression` as a natural language string — the tool resolves metric names to UUIDs automatically. If a name is ambiguous (multiple matches), the tool will tell you — ask the user to clarify.
+
+Formula expression examples:
+- `"MQLs + SQLs"` — adds two metrics
+- `"(Demos Booked / MQLs) * 100"` — conversion rate as percentage
+- `"Revenue - COGS"` — gross profit
+
+**If formula references metrics that don't exist yet, create those first.**
 
 ---
 
-## Filter Format
+## Shared Settings (direct_entry and calculated)
 
-**Simple format for create_metric:**
+| Setting | Options | Guidance |
+|---------|---------|----------|
+| **unit** | integer, decimal, percentage, currency, minutes, hours, days | Infer from context ("conversion rate" = percentage, "NPS score" = integer) |
+| **direction** | more_is_better, less_is_better | Revenue/customers = more. Churn/CAC/tickets = less. |
+| **measurement_frequency** | daily, weekly, monthly | "I'll update it weekly" = weekly |
+| **aggregation_type** | sum, latest, average | See guidance below |
+| **pacing_type** | linear_growth, direct_comparison | See guidance below |
+
+---
+
+## Aggregation Guidance
+
+**Use `latest` for:**
+- Percentages (conversion rate, churn rate)
+- MRR / ARR / recurring revenue
+- Active subscribers / customer counts
+- Balance-type metrics (what's the current state?)
+
+**Use `sum` for:**
+- Leads generated, deals closed, cash collected, new sales
+- Flow-type metrics (what happened this period?)
+
+**Use `average` for:**
+- Average deal size, NPS score, response time
+
+---
+
+## Pacing Type Guidance
+
+**Use `linear_growth` for:** Cumulative metrics that grow over time (MRR, total customers)
+**Use `direct_comparison` for:** Period-over-period snapshots (this week vs last week)
+
+---
+
+## Filter Format (integration metrics only)
+
 ```json
 {
   "filters": [
@@ -133,47 +154,48 @@ Before creating, you MUST know:
 ```
 
 - Multiple values in one field = OR (active OR trial)
-- Multiple fields = AND (product X AND status active)
-- For complex nested AND/OR logic → create without filters, tell user to configure manually in Settings
+- Multiple fields = AND
+- Complex nested logic → create without filters, tell user to configure manually in Settings
 
 ---
 
-## Filterable vs Non-Filterable Metrics
+## Example Conversations
 
-**Filterable metrics:** Can create multiple instances with different filters
-- Example: Active Subscribers (SaaS Academy) + Active Subscribers (Growth Accelerator)
+**Integration metric:**
+> User: "Set up a metric for Growth Accelerator subscribers"
+> 1. Check existing → show similar
+> 2. Get filter options for product field
+> 3. Confirm: "I'll create **Growth Accelerator - Active Subscribers** filtered by product = Growth Accelerator. Aggregation: latest. Pacing: linear_growth. Direction: more is better. Confirm?"
+> 4. create_metric(data_type: "integration", ...)
 
-**Non-filterable metrics:** Only one instance per connection per team
-- Check `filterable: true/false` in list_managed_queries response
+**Direct entry metric:**
+> User: "Create a manual metric called NPS Score, I'll update it monthly"
+> 1. Check existing → none found
+> 2. Infer: unit = integer, direction = more_is_better, frequency = monthly
+> 3. Confirm: "I'll create **NPS Score** as a manual metric you update monthly. Unit: integer. Direction: more is better. Confirm?"
+> 4. create_metric(data_type: "direct_entry", name: "NPS Score", unit: "integer", direction: "more_is_better", measurement_frequency: "monthly", team_id: ...)
 
----
-
-## Example Conversation
-
-**User:** "Set up a metric for Growth Accelerator subscribers"
-
-**Claudia:**
-1. ✅ Check existing: `get_metrics_summary("subscribers Growth Accelerator")`
-2. ✅ Show results: "I found 'Active Subscribers' but it's tracking all products. Want me to create a filtered version?"
-3. ✅ Get filter options: `get_filter_options(query_id, "item_product_id", connection_id)`
-4. ✅ Confirm: "I'll create **Growth Accelerator - Active Subscribers** filtered by product = Growth Accelerator. Aggregation: **latest** (it's a count of current subscribers). Pacing: **linear_growth**. Direction: **more is better**. Confirm?"
-5. ✅ Create after user confirms
+**Calculated metric:**
+> User: "Create a conversion rate metric that divides Demos Booked by MQLs"
+> 1. Confirm both metrics exist via search
+> 2. Confirm: "I'll create **Conversion Rate** calculated as Demos Booked / MQLs. Unit: percentage. Direction: more is better. Confirm?"
+> 3. create_metric(data_type: "calculated", name: "Conversion Rate", formula_expression: "Demos Booked / MQLs", unit: "percentage", direction: "more_is_better", team_id: ...)
 
 ---
 
 ## NEVER DO THIS
 
-- **Say "metric not found" after only ONE search** — exhaustive search is MANDATORY
+- Say "metric not found" after only ONE search — exhaustive search is MANDATORY
 - Create a metric without checking for duplicates first
-- Create a filtered metric without confirming the exact filter values
-- Guess at aggregation/pacing/direction without asking
+- Assume integration type when user says they'll update it manually
+- Start building a formula before confirming the referenced metrics exist
+- Guess at aggregation/pacing/direction without asking if context is unclear
 - Create metrics with complex nested filters (tell user to configure manually)
-- Use only `get_metrics_summary` — always try `get_metric_by_name` as fallback
 
 ## ALWAYS DO THIS
 
 - Search existing metrics first
-- Show similar metrics before creating new ones
-- Confirm filter criteria explicitly
-- Ask about aggregation, pacing, direction if not specified
+- Determine metric type from user intent BEFORE starting the workflow
+- Confirm all settings explicitly before creating
+- For calculated: verify referenced metrics exist before building formula
 - Explain what each setting means in context of their metric
