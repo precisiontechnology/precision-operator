@@ -92,7 +92,8 @@
       "enabled": true,
       "allowedOrigins": [
         "https://operator.precision.co",
-        "https://operator-staging.precision.co"
+        "https://operator-staging.precision.co",
+        "http://127.0.0.1:3000"
       ]
     },
     "http": {
