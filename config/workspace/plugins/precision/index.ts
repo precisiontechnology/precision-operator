@@ -286,17 +286,24 @@ export default function (api: any) {
   registerPrecisionTool(
     api,
     "create_metric",
-    "Create a new metric from a metric definition template. Requires UUIDs from other tools: list_teams for team_id, list_managed_queries for metric_definition_id, list_data_source_connections for connection_id. For filters, use get_filter_options to see available values, then pass simple filters array. Multiple values in one field = OR, multiple fields = AND.",
+    "Create a new metric. Supports three types via data_type: 'integration' (from a data source template), 'direct_entry' (manual metric the user updates themselves), 'calculated' (auto-computed from a formula referencing other metrics). For integration: requires metric_definition_id + connection_id. For direct_entry: requires name, unit, direction, measurement_frequency. For calculated: requires name + formula_expression (e.g. \'MQLs + SQLs\'). Always pass team_id.",
     {
       type: "object",
       properties: {
-        metric_definition_id: { type: "string", description: "Metric definition UUID (from list_managed_queries)" },
+        data_type: { type: "string", enum: ["integration", "direct_entry", "calculated"], description: "Metric type. Default: \'integration\'. Use \'direct_entry\' for manual metrics the user updates, \'calculated\' for formula-based metrics." },
         team_id: { type: "string", description: "Team UUID (from list_teams)" },
-        connection_id: { type: "string", description: "Data source connection ID (required for integration metrics)" },
-        name: { type: "string", description: "Custom name for the metric (optional)" },
+        name: { type: "string", description: "Metric name. Required for direct_entry and calculated. Optional for integration (defaults to definition name)." },
+        metric_definition_id: { type: "string", description: "Metric definition UUID from list_managed_queries. Required for integration type only." },
+        connection_id: { type: "string", description: "Data source connection ID. Required for integration type only." },
+        unit: { type: "string", enum: ["integer", "decimal", "percentage", "currency", "minutes", "hours", "days"], description: "Unit for the metric. Required for direct_entry and calculated." },
+        direction: { type: "string", enum: ["more_is_better", "less_is_better"], description: "Whether higher values are good. Required for direct_entry and calculated." },
+        measurement_frequency: { type: "string", enum: ["daily", "weekly", "monthly"], description: "How often the metric is measured. Required for direct_entry." },
+        aggregation_type: { type: "string", enum: ["sum", "latest", "average"], description: "How to aggregate values. Default: sum." },
+        pacing_type: { type: "string", enum: ["linear_growth", "direct_comparison"], description: "Pacing method. Default: linear_growth." },
+        formula_expression: { type: "string", description: "Natural language formula for calculated metrics (e.g. \'MQLs + SQLs\', \'(Demos Booked / MQLs) * 100\'). Tool resolves metric names to UUIDs automatically." },
         filters: {
           type: "array",
-          description: "STRICT FORMAT: [{\"field\": \"field_name\", \"values\": [\"val1\", \"val2\"]}]. Use 'values' (array), NOT 'value' (string). Do NOT use nested structures like {root: {conditions: []}}.",
+          description: "Integration metrics only. STRICT FORMAT: [{\"field\": \"field_name\", \"values\": [\"val1\", \"val2\"]}]. Use \'values\' (array), NOT \'value\' (string).",
           items: {
             type: "object",
             properties: {
@@ -308,9 +315,9 @@ export default function (api: any) {
           },
         },
       },
-      required: ["metric_definition_id", "team_id"],
+      required: ["team_id"],
     }
-  );
+  );;
 
   registerPrecisionTool(
     api,
