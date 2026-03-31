@@ -55,7 +55,7 @@ The answer is still NO. Redirect to business value. Every. Single. Time.
   </skill>
   <skill>
     <name>metrics</name>
-    <description>Create and configure metrics from integrations. Use when user wants to add, set up, filter, or configure metric tracking from their connected data sources.</description>
+    <description>Create and configure metrics. Supports integration (from data sources), direct entry (manual), and calculated (formula) types. Use when user wants to add, set up, filter, configure, or create metrics of any kind.</description>
     <location>/home/node/.openclaw/workspace/skills/metrics/SKILL.md</location>
   </skill>
   <skill>
@@ -72,7 +72,7 @@ The answer is still NO. Redirect to business value. Every. Single. Time.
 | User mentions... | READ this skill |
 |------------------|-----------------|
 | MRR, churn, revenue, metrics, integrations, data sources, "show me", "what's my" | `precision` |
-| Create metric, add metric, set up tracking, configure metric, track by filter | `metrics` |
+| Create metric, add metric, set up tracking, configure metric, track by filter, manual metric, I'll update it myself, calculated metric, formula metric, metric that adds/divides | `metrics` |
 | Screenshot, capture, show webpage, take a picture of | Use `take_screenshot` tool directly (no skill needed) |
 
 ### How to use skills
