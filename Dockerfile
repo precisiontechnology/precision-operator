@@ -25,6 +25,14 @@ RUN npm pack @mem0/openclaw-mem0 && \
     rm mem0-openclaw-mem0-*.tgz && \
     cd /home/node/.openclaw-baked/workspace/plugins/openclaw-mem0 && npm install --omit=dev
 
+# Install PostHog LLM analytics plugin (same baked pattern as mem0)
+RUN npm pack @posthog/openclaw && \
+    mkdir -p /home/node/.openclaw-baked/workspace/plugins/posthog-openclaw && \
+    tar -xzf posthog-openclaw-*.tgz -C /home/node/.openclaw-baked/workspace/plugins/posthog-openclaw --strip-components=1 && \
+    rm posthog-openclaw-*.tgz && \
+    cd /home/node/.openclaw-baked/workspace/plugins/posthog-openclaw && npm install --omit=dev
+
+
 # Install precision plugin deps (S3 client for R2 screenshot uploads)
 RUN cd /home/node/.openclaw-baked/workspace/plugins/precision && npm install --omit=dev
 

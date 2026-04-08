@@ -11,6 +11,12 @@ if [ -n "$PRECISION_ACCOUNT_ID" ]; then
   echo "[entrypoint] PRECISION_ACCOUNT_ID substituted into config"
 fi
 
+# Substitute POSTHOG_PROJECT_TOKEN into config (used by PostHog LLM analytics plugin)
+if [ -n "$POSTHOG_PROJECT_TOKEN" ]; then
+  sed -i "s/\${POSTHOG_PROJECT_TOKEN}/$POSTHOG_PROJECT_TOKEN/g" /home/node/.openclaw/openclaw.json
+  echo "[entrypoint] POSTHOG_PROJECT_TOKEN substituted into config"
+fi
+
 cp /home/node/.openclaw-baked/exec-approvals.json /home/node/.openclaw/exec-approvals.json
 cp -r /home/node/.openclaw-baked/workspace/* /home/node/.openclaw/workspace/
 
