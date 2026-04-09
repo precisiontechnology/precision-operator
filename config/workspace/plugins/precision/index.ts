@@ -650,6 +650,130 @@ export default function (api: any) {
     }
   );
 
+  // Direct API tools
+  registerPrecisionTool(
+    api,
+    "list_direct_api_connections",
+    "List Direct API (Bring Your Own Auth) data source connections with their synced resources and BigQuery table names. Use this to discover what BYOA data is available before inspecting tables or writing queries.",
+    {
+      type: "object",
+      properties: {
+        connection_id: {
+          type: "string",
+          description: "Optional: filter to a specific connection ID",
+        },
+      },
+      required: [],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "inspect_bigquery_table",
+    "Inspect a BigQuery table from a Direct API connection. Returns row count, date range, payload field names, and sample records. Use to understand the data structure before writing custom queries.",
+    {
+      type: "object",
+      properties: {
+        connection_id: {
+          type: "string",
+          description: "Direct API connection ID",
+        },
+        resource_name: {
+          type: "string",
+          description: "Resource name (e.g. 'contacts', 'jobs')",
+        },
+        sample_count: {
+          type: "number",
+          description: "Number of sample records to return (default 3, max 10)",
+        },
+      },
+      required: ["connection_id", "resource_name"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "test_custom_query",
+    "Validate and preview a custom SQL query against BigQuery. The query must return 'date' and 'value' columns for metric compatibility. Use {{full_table_path}} for the table, {{batch_start_date}}/{{batch_end_date}} for date range.",
+    {
+      type: "object",
+      properties: {
+        sql: { type: "string", description: "BigQuery SQL query to test" },
+        connection_id: {
+          type: "string",
+          description: "Direct API connection ID",
+        },
+        resource_name: {
+          type: "string",
+          description: "Resource name for table path resolution",
+        },
+        dry_run: {
+          type: "boolean",
+          description:
+            "If true, only validates SQL without executing (default: false)",
+        },
+      },
+      required: ["sql", "connection_id", "resource_name"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "create_metric_with_custom_query",
+    "Create a metric backed by a custom BigQuery query for a Direct API connection. SQL must return 'date' and 'value' columns. Enables batch historical sync by default for up to 12 months of data.",
+    {
+      type: "object",
+      properties: {
+        team_id: { type: "string", description: "Team ID" },
+        metric_name: { type: "string", description: "Name for the metric" },
+        sql: {
+          type: "string",
+          description:
+            "BigQuery SQL returning 'date' and 'value' columns. Use {{full_table_path}} for table.",
+        },
+        connection_id: {
+          type: "string",
+          description: "Direct API connection ID",
+        },
+        resource_name: {
+          type: "string",
+          description: "Primary resource name",
+        },
+        unit: {
+          type: "string",
+          description:
+            "Metric unit: integer, decimal, percentage, currency (default: integer)",
+        },
+        direction: {
+          type: "string",
+          description:
+            "more_is_better or less_is_better (default: more_is_better)",
+        },
+        measurement_frequency: {
+          type: "string",
+          description: "daily, weekly, or monthly (default: daily)",
+        },
+        aggregation_type: {
+          type: "string",
+          description: "sum, latest, or average (default: sum)",
+        },
+        description: { type: "string", description: "Metric description" },
+        historical_sync_period: {
+          type: "string",
+          description:
+            "How far back: last_12_months, last_6_months, etc. (default: last_12_months)",
+        },
+      },
+      required: [
+        "team_id",
+        "metric_name",
+        "sql",
+        "connection_id",
+        "resource_name",
+      ],
+    }
+  );
+
   // Screenshot tool — calls Browserless REST API directly, uploads to R2, returns URL
   api.registerTool({
     name: "take_screenshot",

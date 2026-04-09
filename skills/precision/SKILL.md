@@ -184,6 +184,79 @@ Rules:
 - Show a connect card before the user has chosen or confirmed a source
 - Emit connect cards unprompted
 
+## Direct API (Bring Your Own Auth) — Custom Metrics
+
+When a user has a Direct API connection (they brought their own API key/credentials), there are NO pre-built managed queries or metric definitions. You help them create custom metrics by inspecting the raw data and writing SQL queries.
+
+### Workflow
+1. `list_direct_api_connections` → discover connections and BigQuery table names
+2. `inspect_bigquery_table(connection_id, resource_name)` → understand data shape, payload fields, sample records
+3. Help the user articulate what they want to track
+4. Write a SQL query returning `date` and `value` columns
+5. `test_custom_query(sql, connection_id, resource_name)` → validate and preview results
+6. `create_metric_with_custom_query(...)` → create the metric (auto-enables 12-month historical sync)
+
+### BigQuery Table Schema
+
+Every Direct API table has exactly 6 columns:
+- `id` (STRING) — record identifier
+- `snapshot_at` (TIMESTAMP) — when the record was synced
+- `sync_run_id` (STRING) — which sync run captured it
+- `source_created_at` (TIMESTAMP) — when the record was created in the source system
+- `source_updated_at` (TIMESTAMP) — when the record was last modified in the source
+- `payload` (JSON) — the full raw API response for the record
+
+Tables are partitioned by `snapshot_at`.
+
+### Append-Only Change Tracking
+
+Each sync appends rows only for records that changed. The same `id` may appear multiple times with different `snapshot_at` values. To get the **latest state** of each record:
+
+```sql
+SELECT * FROM `{{full_table_path}}`
+QUALIFY ROW_NUMBER() OVER (PARTITION BY id ORDER BY snapshot_at DESC) = 1
+```
+
+### Writing Batch Queries (critical for historical sync)
+
+Queries MUST return `date` and `value` columns. Use `{{batch_start_date}}` and `{{batch_end_date}}` template variables — these get interpolated to cover up to 12 months in one call.
+
+**Daily count of active records:**
+```sql
+SELECT DATE(snapshot_at) AS date, COUNT(DISTINCT id) AS value
+FROM `{{full_table_path}}`
+WHERE snapshot_at BETWEEN {{batch_start_date}} AND {{batch_end_date}}
+QUALIFY ROW_NUMBER() OVER (PARTITION BY id, DATE(snapshot_at) ORDER BY snapshot_at DESC) = 1
+GROUP BY date ORDER BY date
+```
+
+**Daily revenue from paid invoices:**
+```sql
+SELECT DATE(snapshot_at) AS date,
+  SUM(CAST(JSON_VALUE(payload, '$.amount') AS FLOAT64)) / 100 AS value
+FROM `{{full_table_path}}`
+WHERE snapshot_at BETWEEN {{batch_start_date}} AND {{batch_end_date}}
+  AND JSON_VALUE(payload, '$.status') = 'paid'
+QUALIFY ROW_NUMBER() OVER (PARTITION BY id, DATE(snapshot_at) ORDER BY snapshot_at DESC) = 1
+GROUP BY date ORDER BY date
+```
+
+### JSON Payload Extraction
+
+```sql
+JSON_VALUE(payload, '$.email')                                    -- string field
+CAST(JSON_VALUE(payload, '$.amount') AS FLOAT64)                  -- numeric field
+JSON_VALUE(payload, '$.address.city')                             -- nested field
+PARSE_TIMESTAMP('%Y-%m-%dT%H:%M:%S', JSON_VALUE(payload, '$.created_at'))  -- timestamp
+```
+
+### Dataset / Table Naming
+
+- Dataset: `{account_id}__raw_snapshots` (UUIDs: hyphens → underscores)
+- Table: `{connection_id}__raw__{category}__{source}__{resource_name}`
+
+---
+
 ## NEVER DO THIS
 
 - "No metric found" without searching first
