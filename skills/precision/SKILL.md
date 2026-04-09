@@ -67,7 +67,7 @@ Include error messages when `has_error` is true.
 
 ---
 
-## Metric Queries
+## Metric Queries & Operations
 
 **Workflow:**
 1. User asks about any metric → `get_metrics_summary` FIRST
@@ -75,6 +75,29 @@ Include error messages when `has_error` is true.
 3. "Why did X change?" → `explore_causality(metric_id, "upstream")`
 4. "Show me the records" → `get_underlying_data(metric_id, date)`
 5. "How do I fix this?" → `retrieve_kb_context`
+
+### Metric Management
+- **Update metric properties:** `update_metric(metric_id, name, description, unit, direction, dri_id, measurement_frequency, aggregation_type)`
+- **Archive/Unarchive:** `archive_metric(metric_id)` / `unarchive_metric(metric_id)`
+- **Manual Data Entry:** `update_metric_value(metric_id, date, value)` or `delete_metric_value(metric_id, date)`
+
+---
+
+## Scorecards, Sections & Teams
+
+### Scorecards
+- **List/Get:** `list_scorecards` or `get_scorecard(scorecard_id)`
+- **Manage:** `create_scorecard(name, team_id, allowed_granularities, default)`, `update_scorecard`, `delete_scorecard`
+
+### Scorecard Structure (Sections & Metrics)
+- **Sections:** `create_scorecard_section`, `update_scorecard_section`, `delete_scorecard_section`, `reorder_scorecard_section`
+- **Metric Placement:** `add_metric_to_scorecard(section_id, metric_id)`, `remove_metric_from_scorecard(scorecard_id, metric_id)`, `reorder_scorecard_metric`
+
+### Metric Notes (Annotations)
+- **Manage:** `create_metric_note(metric_id, date, content, cell_type)`, `update_metric_note`, `delete_metric_note`
+
+### Teams
+- **Manage:** `create_team(name, dri_account_user_id)` (automatically creates a default scorecard), `update_team`
 
 ---
 

@@ -335,6 +335,321 @@ export default function (api: any) {
     }
   );
 
+  // New Operator Tools (PSA-574)
+
+  registerPrecisionTool(
+    api,
+    "update_metric",
+    "Update an existing metric's properties. Supports partial updates — only fields passed are changed.",
+    {
+      type: "object",
+      properties: {
+        metric_id: { type: "string", description: "ID of the metric to update" },
+        name: { type: "string", description: "New name" },
+        description: { type: "string", description: "New description" },
+        unit: { type: "string", enum: ["integer", "decimal", "percentage", "currency", "minutes", "hours", "days"] },
+        direction: { type: "string", enum: ["more_is_better", "less_is_better"] },
+        dri_id: { type: "string", description: "Account user ID of the DRI" },
+        measurement_frequency: { type: "string", enum: ["daily", "weekly", "monthly"] },
+        aggregation_type: { type: "string", enum: ["sum", "latest", "average"] },
+      },
+      required: ["metric_id"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "archive_metric",
+    "Archive a metric (soft delete). Returns error if metric is in active scorecards.",
+    {
+      type: "object",
+      properties: { metric_id: { type: "string" } },
+      required: ["metric_id"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "unarchive_metric",
+    "Unarchive a previously archived metric.",
+    {
+      type: "object",
+      properties: { metric_id: { type: "string" } },
+      required: ["metric_id"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "update_metric_value",
+    "Manually set or update a metric value. Supports daily (single day), weekly, or monthly granularity. " +
+      "When weekly/monthly, distributes the value across all days in the period (same as scorecard UI). " +
+      "IMPORTANT: When a user provides a value for a month or week (e.g. 'CAC for March was $412'), " +
+      "confirm with them before calling with monthly/weekly granularity: " +
+      "'Got it — want me to backfill that across all of [month/week]?' Only proceed after they confirm.",
+    {
+      type: "object",
+      properties: {
+        metric_id: { type: "string" },
+        date: { type: "string", description: "YYYY-MM-DD. For monthly use first of month (2025-03-01). For weekly use the Monday." },
+        value: { type: "number" },
+        granularity: { type: "string", enum: ["daily", "weekly", "monthly"], description: "Defaults to daily. Use weekly/monthly to distribute across the period." },
+      },
+      required: ["metric_id", "date", "value"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "delete_metric_value",
+    "Clear a specific date's value on a direct_entry metric.",
+    {
+      type: "object",
+      properties: {
+        metric_id: { type: "string" },
+        date: { type: "string", description: "YYYY-MM-DD" },
+      },
+      required: ["metric_id", "date"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "list_scorecards",
+    "List all scorecards for the account.",
+    { type: "object", properties: {} }
+  );
+
+  registerPrecisionTool(
+    api,
+    "get_scorecard",
+    "Get full scorecard detail: sections, metrics, positions.",
+    {
+      type: "object",
+      properties: { scorecard_id: { type: "string" } },
+      required: ["scorecard_id"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "create_scorecard",
+    "Create a new scorecard.",
+    {
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        team_id: { type: "string" },
+        allowed_granularities: { type: "array", items: { type: "string" } },
+        default: { type: "boolean" },
+      },
+      required: ["name"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "update_scorecard",
+    "Update scorecard properties.",
+    {
+      type: "object",
+      properties: {
+        scorecard_id: { type: "string" },
+        name: { type: "string" },
+        team_id: { type: "string" },
+        default: { type: "boolean" },
+      },
+      required: ["scorecard_id"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "delete_scorecard",
+    "Delete a scorecard. Blocks if it is the only/default scorecard.",
+    {
+      type: "object",
+      properties: { scorecard_id: { type: "string" } },
+      required: ["scorecard_id"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "create_scorecard_section",
+    "Add a named section to a scorecard.",
+    {
+      type: "object",
+      properties: {
+        scorecard_id: { type: "string" },
+        name: { type: "string" },
+        position: { type: "number" },
+      },
+      required: ["scorecard_id", "name"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "update_scorecard_section",
+    "Rename a scorecard section.",
+    {
+      type: "object",
+      properties: {
+        section_id: { type: "string" },
+        name: { type: "string" },
+      },
+      required: ["section_id", "name"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "delete_scorecard_section",
+    "Remove a section. Requires force: true if metrics are present.",
+    {
+      type: "object",
+      properties: {
+        section_id: { type: "string" },
+        force: { type: "boolean" },
+      },
+      required: ["section_id"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "reorder_scorecard_section",
+    "Change a section's position.",
+    {
+      type: "object",
+      properties: {
+        section_id: { type: "string" },
+        position: { type: "number" },
+      },
+      required: ["section_id", "position"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "add_metric_to_scorecard",
+    "Add a metric to a scorecard section.",
+    {
+      type: "object",
+      properties: {
+        section_id: { type: "string" },
+        metric_id: { type: "string" },
+      },
+      required: ["section_id", "metric_id"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "remove_metric_from_scorecard",
+    "Remove a metric from a scorecard.",
+    {
+      type: "object",
+      properties: {
+        scorecard_id: { type: "string" },
+        metric_id: { type: "string" },
+      },
+      required: ["scorecard_id", "metric_id"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "reorder_scorecard_metric",
+    "Move/reorder metric within or between sections.",
+    {
+      type: "object",
+      properties: {
+        scorecard_metric_id: { type: "string" },
+        section_id: { type: "string" },
+        position: { type: "number" },
+      },
+      required: ["scorecard_metric_id", "section_id", "position"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "create_metric_note",
+    "Add an annotation to a metric cell. " +
+      "cell_type determines which cell the note appears on: " +
+      "'metric_value' = a specific daily value cell, " +
+      "'aggregation' = a monthly/weekly total cell (e.g. the March total column), " +
+      "'goal' = a goal cell. " +
+      "IMPORTANT: When the user's request is ambiguous (e.g. 'leave a note on March'), " +
+      "ask which cell they mean: 'Want me to put that on the March total, or a specific day?'",
+    {
+      type: "object",
+      properties: {
+        metric_id: { type: "string" },
+        date: { type: "string", description: "YYYY-MM-DD. For monthly totals use first of month (2026-03-01)." },
+        content: { type: "string" },
+        cell_type: { type: "string", enum: ["metric_value", "aggregation", "goal"], description: "metric_value = daily cell, aggregation = monthly/weekly total, goal = goal cell. Defaults to metric_value." },
+      },
+      required: ["metric_id", "date", "content"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "update_metric_note",
+    "Edit an existing note.",
+    {
+      type: "object",
+      properties: {
+        note_id: { type: "string" },
+        content: { type: "string" },
+      },
+      required: ["note_id", "content"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "delete_metric_note",
+    "Delete a note.",
+    {
+      type: "object",
+      properties: { note_id: { type: "string" } },
+      required: ["note_id"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "create_team",
+    "Create a team. Auto-creates default scorecard.",
+    {
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        dri_account_user_id: { type: "string" },
+      },
+      required: ["name", "dri_account_user_id"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "update_team",
+    "Rename team or change DRI.",
+    {
+      type: "object",
+      properties: {
+        team_id: { type: "string" },
+        name: { type: "string" },
+        dri_account_user_id: { type: "string" },
+      },
+      required: ["team_id"],
+    }
+  );
+
   // Screenshot tool — calls Browserless REST API directly, uploads to R2, returns URL
   api.registerTool({
     name: "take_screenshot",
