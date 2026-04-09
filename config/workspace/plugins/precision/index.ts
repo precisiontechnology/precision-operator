@@ -375,13 +375,18 @@ export default function (api: any) {
   registerPrecisionTool(
     api,
     "update_metric_value",
-    "Manually set or update a value for a specific date on a direct_entry metric.",
+    "Manually set or update a metric value. Supports daily (single day), weekly, or monthly granularity. " +
+      "When weekly/monthly, distributes the value across all days in the period (same as scorecard UI). " +
+      "IMPORTANT: When a user provides a value for a month or week (e.g. 'CAC for March was $412'), " +
+      "confirm with them before calling with monthly/weekly granularity: " +
+      "'Got it — want me to backfill that across all of [month/week]?' Only proceed after they confirm.",
     {
       type: "object",
       properties: {
         metric_id: { type: "string" },
-        date: { type: "string", description: "YYYY-MM-DD" },
+        date: { type: "string", description: "YYYY-MM-DD. For monthly use first of month (2025-03-01). For weekly use the Monday." },
         value: { type: "number" },
+        granularity: { type: "string", enum: ["daily", "weekly", "monthly"], description: "Defaults to daily. Use weekly/monthly to distribute across the period." },
       },
       required: ["metric_id", "date", "value"],
     }
@@ -554,26 +559,31 @@ export default function (api: any) {
     {
       type: "object",
       properties: {
-        scorecard_id: { type: "string" },
-        metric_id: { type: "string" },
+        scorecard_metric_id: { type: "string" },
         section_id: { type: "string" },
         position: { type: "number" },
       },
-      required: ["scorecard_id", "metric_id", "section_id", "position"],
+      required: ["scorecard_metric_id", "section_id", "position"],
     }
   );
 
   registerPrecisionTool(
     api,
     "create_metric_note",
-    "Add an annotation to a metric.",
+    "Add an annotation to a metric cell. " +
+      "cell_type determines which cell the note appears on: " +
+      "'metric_value' = a specific daily value cell, " +
+      "'aggregation' = a monthly/weekly total cell (e.g. the March total column), " +
+      "'goal' = a goal cell. " +
+      "IMPORTANT: When the user's request is ambiguous (e.g. 'leave a note on March'), " +
+      "ask which cell they mean: 'Want me to put that on the March total, or a specific day?'",
     {
       type: "object",
       properties: {
         metric_id: { type: "string" },
-        date: { type: "string", description: "YYYY-MM-DD" },
+        date: { type: "string", description: "YYYY-MM-DD. For monthly totals use first of month (2026-03-01)." },
         content: { type: "string" },
-        cell_type: { type: "string", enum: ["metric_value", "aggregation", "goal"] },
+        cell_type: { type: "string", enum: ["metric_value", "aggregation", "goal"], description: "metric_value = daily cell, aggregation = monthly/weekly total, goal = goal cell. Defaults to metric_value." },
       },
       required: ["metric_id", "date", "content"],
     }
