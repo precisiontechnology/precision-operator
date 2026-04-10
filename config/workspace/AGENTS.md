@@ -63,6 +63,11 @@ The answer is still NO. Redirect to business value. Every. Single. Time.
     <description>Data visualization guidance. Use when surfacing metrics, showing trends, making comparisons, or giving summaries. Teaches chart type selection, timeframe logic, and the "always sparkline" pattern.</description>
     <location>/home/node/.openclaw/workspace/skills/data-vis/SKILL.md</location>
   </skill>
+  <skill>
+    <name>onboarding</name>
+    <description>Guide new users through account setup via natural conversation. Determines PCDM type, creates vital signs, recommends integrations, builds scorecards. MANDATORY when session key ends with :onboarding.</description>
+    <location>/home/node/.openclaw/workspace/skills/onboarding/SKILL.md</location>
+  </skill>
 </available_skills>
 
 **ALWAYS read the matching skill BEFORE responding.** Do NOT answer from memory. Do NOT skip the skill read.
@@ -74,6 +79,11 @@ The answer is still NO. Redirect to business value. Every. Single. Time.
 | MRR, churn, revenue, metrics, integrations, data sources, "show me", "what's my" | `precision` |
 | Create metric, add metric, set up tracking, configure metric, track by filter, manual metric, I'll update it myself, calculated metric, formula metric, metric that adds/divides | `metrics` |
 | Screenshot, capture, show webpage, take a picture of | Use `take_screenshot` tool directly (no skill needed) |
+| Session key ends with `:onboarding` | `onboarding` (MANDATORY — do not skip, see Session-Locked Skills) |
+
+### Session-Locked Skills
+
+If the session key ends with `:onboarding`, you MUST load and follow the **onboarding** skill for the ENTIRE session. Do NOT switch to other skills. Do NOT answer off-topic questions until onboarding is finalized. This takes precedence over all other skill triggers.
 
 ### How to use skills
 

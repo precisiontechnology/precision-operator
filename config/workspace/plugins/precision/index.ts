@@ -736,4 +736,112 @@ export default function (api: any) {
       required: [],
     }
   );
+
+  // Onboarding tools
+
+  registerPrecisionTool(
+    api,
+    "get_onboarding_status",
+    "Get the current onboarding state for this account. Returns PCDM type, business context, vital signs, integrations, scorecards, and teams. ALWAYS call this as the FIRST action in an onboarding session for resume support.",
+    {
+      type: "object",
+      properties: {},
+      required: [],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "save_business_context",
+    "Save business context gathered during the onboarding conversation. All params are optional — save whatever you have so far. Each call merges into existing data (checkpoint). Write the same keys the old questionnaire used for backward compatibility.",
+    {
+      type: "object",
+      properties: {
+        business_type: { type: "string", description: "Business type (e.g., saas-sales, agency, service, coaching, home-services, other)" },
+        revenue_type: { type: "string", enum: ["recurring", "one_time"], description: "Revenue model" },
+        business_stage: { type: "string", description: "Revenue stage/band" },
+        industry: {
+          type: "string",
+          enum: [
+            "saas_software", "agency_consulting", "professional_services", "coaching_training",
+            "ecommerce", "healthcare", "financial_services", "real_estate", "home_services",
+            "manufacturing", "education", "media_content", "legal", "nonprofit", "other"
+          ],
+          description: "Standardized industry classification. Infer from conversation and confirm with user."
+        },
+        industry_raw: { type: "string", description: "Verbatim user description of their industry (e.g., 'boutique IP litigation law firm')" },
+        goals: { type: "string", description: "Business goals for the next 12 months" },
+        risks: { type: "string", description: "What keeps them up at night" },
+        context_summary: { type: "string", description: "Free-form operator summary of the business context" },
+        onboarding_phase: { type: "string", description: "Current phase for checkpoint tracking (e.g., business_discovery, pcdm_set, vitals_created)" },
+      },
+      required: [],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "set_pcdm_type",
+    "Set the PCDM (Precision Core Data Model) type for this account. Returns the required vital sign types for the selected PCDM with human-readable names and descriptions. PCDM types: pcdm1 = Sales-Led Recurring, pcdm2 = Sales-Led Transactional, pcdm3 = Product-Led Recurring, pcdm4 = Product-Led Transactional.",
+    {
+      type: "object",
+      properties: {
+        pcdm_type: {
+          type: "string",
+          enum: ["pcdm1", "pcdm2", "pcdm3", "pcdm4"],
+          description: "pcdm1: Sales-Led Recurring (SaaS/agency with MRR). pcdm2: Sales-Led Transactional (one-time sales). pcdm3: Product-Led Recurring (WIP). pcdm4: Product-Led Transactional (WIP)."
+        },
+        reasoning: { type: "string", description: "Why this PCDM was chosen based on the conversation" },
+      },
+      required: ["pcdm_type"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "configure_vital_signs",
+    "Create the PCDM-determined vital sign metrics for this account. Uses the account's PCDM type to determine which vitals to create. Idempotent — returns existing vitals if already created. Must call set_pcdm_type first.",
+    {
+      type: "object",
+      properties: {},
+      required: [],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "set_recommended_integrations",
+    "Set the recommended integrations for the onboarding panel. Populates the side panel with connect cards so the user can connect their platforms. Pass an array of data source IDs with reasons.",
+    {
+      type: "object",
+      properties: {
+        integrations: {
+          type: "array",
+          description: "Array of recommended integrations",
+          items: {
+            type: "object",
+            properties: {
+              data_source_id: { type: "string", description: "UUID of the data source (from list_available_data_sources)" },
+              reason: { type: "string", description: "Why this integration is recommended (e.g., 'Tracks your MRR and subscription metrics')" },
+            },
+            required: ["data_source_id", "reason"],
+          },
+        },
+      },
+      required: ["integrations"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "finalize_onboarding",
+    "Mark onboarding as complete. Creates the leadership scorecard if needed. Call this as the FINAL step of the onboarding conversation after vitals and scorecards are configured.",
+    {
+      type: "object",
+      properties: {
+        summary: { type: "string", description: "Summary of what was configured during onboarding (PCDM, vitals, integrations, scorecards)" },
+      },
+      required: ["summary"],
+    }
+  );
 }
