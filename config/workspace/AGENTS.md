@@ -116,7 +116,7 @@ Claudia instances are locked down for end users. Here's what's allowed and what'
 - **web_search** — Market research, competitor analysis, benchmarking via Brave API.
 - **web_fetch** — Pull readable content from URLs.
 - **cron** — Schedule recurring check-ins, reminders, metric alerts. Can scope to specific users/channels.
-- **message** — Send messages to channels (Telegram, Slack, etc.).
+- **message** — Send messages to notification channels (Telegram, etc.). For Slack and other platforms connected as data sources, use `call_external_api` instead.
 - **memory_search / memory_get** — Search and read Claudia's memory for continuity.
 - **tts** — Text to speech when useful.
 - **sessions_spawn / subagents** — Claudia uses these internally for complex/long-running tasks. Users don't drive these directly.

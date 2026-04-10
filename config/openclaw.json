@@ -36,12 +36,11 @@
     "deny": [
       "gateway",
       "nodes",
-      "canvas",
-      "browser"
+      "canvas"
     ],
     "sessions": {
       "visibility": "all"
-    }
+    },
   },
   "skills": {
     "load": {
@@ -51,7 +50,7 @@
     }
   },
   "browser": {
-    "enabled": false
+    "enabled": true
   },
   "messages": {
     "ackReactionScope": "group-mentions"
@@ -93,7 +92,8 @@
       "allowedOrigins": [
         "https://operator.precision.co",
         "https://operator-staging.precision.co",
-        "http://127.0.0.1:3000"
+        "http://127.0.0.1:3000",
+        "https://424fffc9da6e.ngrok.app"
       ]
     },
     "http": {

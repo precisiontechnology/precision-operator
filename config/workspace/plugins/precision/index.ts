@@ -8,6 +8,13 @@ const UUID_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}
 const BROWSERLESS_TOKEN = process.env.BROWSERLESS_TOKEN;
 const BROWSERLESS_URL = "https://production-sfo.browserless.io";
 
+// Anthropic Managed Agent for API doc research
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const DOC_AGENT_ID = "agent_011CZv6mpsPAwE5oQy23iMa1";
+const DOC_AGENT_ENV_ID = "env_01EjfZVixXE2wiYMpPTawiX9";
+const ANTHROPIC_API_URL = "https://api.anthropic.com/v1";
+const ANTHROPIC_BETA = "managed-agents-2026-04-01";
+
 // R2 config
 const R2_BUCKET = process.env.R2_BUCKET || "precision-media";
 const R2_ENDPOINT = process.env.R2_ENDPOINT;
@@ -774,8 +781,474 @@ export default function (api: any) {
     }
   );
 
+  // Custom data source tools
+  registerPrecisionTool(
+    api,
+    "create_custom_data_source",
+    "Create a custom data source for the account. You MUST check the API docs FIRST to determine the correct auth header before calling this. auth_config is required.",
+    {
+      type: "object",
+      properties: {
+        name: {
+          type: "string",
+          description: "Display name (e.g. 'Fathom')",
+        },
+        base_url: {
+          type: "string",
+          description: "API base URL (e.g. 'https://api.fathom.ai/external/v1')",
+        },
+        auth_config: {
+          type: "object",
+          description:
+            "REQUIRED. Auth header config from API docs. Must include header_name and header_prefix. " +
+            "Examples: { header_name: 'Authorization', header_prefix: 'Bearer ' } or " +
+            "{ header_name: 'X-Api-Key', header_prefix: '' }. " +
+            "Also include test_endpoint: a GET path to verify credentials (e.g. '/me', '/auth.test').",
+        },
+        auth_schemes: {
+          type: "array",
+          items: { type: "string" },
+          description:
+            "Auth schemes: api_key, basic, oauth2_client_credentials, oauth2_authorization_code",
+        },
+        description: { type: "string", description: "Brief description" },
+        category: {
+          type: "string",
+          description:
+            "Category: sales_crm, finance, email_marketing, productivity, etc.",
+        },
+      },
+      required: ["name", "base_url", "auth_config"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "add_resource_to_data_source",
+    "Add an API resource/endpoint to a custom data source. Each resource defines an endpoint to sync data from.",
+    {
+      type: "object",
+      properties: {
+        data_source_id: {
+          type: "string",
+          description: "Custom data source ID",
+        },
+        name: {
+          type: "string",
+          description: "Resource name (e.g. 'contacts')",
+        },
+        endpoint_path: {
+          type: "string",
+          description: "API endpoint path (e.g. '/v1/contacts')",
+        },
+        category: {
+          type: "string",
+          description: "Data category (e.g. 'crm', 'finance')",
+        },
+        id_field: {
+          type: "string",
+          description: "Primary ID field (default: 'id')",
+        },
+        created_at_field: {
+          type: "string",
+          description: "Creation timestamp field",
+        },
+        updated_at_field: {
+          type: "string",
+          description: "Update timestamp field",
+        },
+        pagination_config: {
+          type: "object",
+          description:
+            "Pagination: { type, data_key, limit_param, limit_value }",
+        },
+        incremental_config: {
+          type: "object",
+          description:
+            "Incremental sync: { param_name, param_format }",
+        },
+      },
+      required: ["data_source_id", "name", "endpoint_path"],
+    }
+  );
+
+  // Connection + external API tools
+  registerPrecisionTool(
+    api,
+    "connect_data_source",
+    "Connect a data source for the account. For direct_api/custom_api, provide credentials. IMPORTANT: Do NOT ask users to paste credentials in chat. Instead, emit a ```connect-form block with the data source info.",
+    {
+      type: "object",
+      properties: {
+        data_source_id: { type: "string", description: "Data source ID" },
+        name: { type: "string", description: "Connection name" },
+        auth_scheme: { type: "string", description: "Auth scheme to use" },
+        credentials: {
+          type: "object",
+          description: "Credentials: { api_key, client_id, secret_key }",
+        },
+      },
+      required: ["data_source_id"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "call_external_api",
+    "Make an authenticated HTTP request to a connected external API. Credentials auto-injected. GET executes immediately. POST/PUT/PATCH/DELETE require user approval.",
+    {
+      type: "object",
+      properties: {
+        connection_id: { type: "string", description: "Connection ID" },
+        method: {
+          type: "string",
+          description: "HTTP method: GET, POST, PUT, PATCH, DELETE",
+        },
+        path: {
+          type: "string",
+          description: "API path (e.g. '/v1/contacts')",
+        },
+        query_params: { type: "object", description: "URL query parameters" },
+        body: { type: "object", description: "Request body" },
+        headers: { type: "object", description: "Additional headers" },
+      },
+      required: ["connection_id", "method", "path"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "update_custom_data_source",
+    "Update a custom data source owned by this account.",
+    {
+      type: "object",
+      properties: {
+        data_source_id: { type: "string", description: "Data source ID" },
+        name: { type: "string", description: "New name" },
+        base_url: { type: "string", description: "New base URL" },
+        description: { type: "string", description: "New description" },
+        category: { type: "string", description: "New category" },
+        auth_schemes: {
+          type: "array",
+          items: { type: "string" },
+          description: "Updated auth schemes",
+        },
+      },
+      required: ["data_source_id"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "delete_custom_data_source",
+    "Delete a custom data source. Requires user approval. Fails if active connections exist.",
+    {
+      type: "object",
+      properties: {
+        data_source_id: { type: "string", description: "Data source ID" },
+      },
+      required: ["data_source_id"],
+    }
+  );
+
+  registerPrecisionTool(
+    api,
+    "remove_resource_from_data_source",
+    "Remove (deactivate) an API resource from a custom data source.",
+    {
+      type: "object",
+      properties: {
+        resource_id: {
+          type: "string",
+          description: "Resource definition ID to remove",
+        },
+      },
+      required: ["resource_id"],
+    }
+  );
+
+  // API Doc Research Agent — uses Anthropic Managed Agent
+  api.registerTool(
+    () => ({
+    name: "lookup_api_docs",
+    description:
+      "Deep research tool for API documentation. SLOW (30-120 seconds). " +
+      "Only use as a LAST RESORT if search_web + web_fetch didn't find enough detail. " +
+      "Prefer search_web for quick lookups.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description:
+            "What to look up (e.g. 'Fathom video API authentication and list meetings endpoint')",
+        },
+      },
+      required: ["query"],
+    },
+    async execute(_id: string, params: Record<string, unknown>) {
+      if (!ANTHROPIC_API_KEY) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: "Error: ANTHROPIC_API_KEY not configured.",
+            },
+          ],
+        };
+      }
+
+      const query = params.query as string;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": ANTHROPIC_BETA,
+        "X-Api-Key": ANTHROPIC_API_KEY,
+      };
+
+      try {
+        // 1. Create a session
+        const sessionRes = await fetch(`${ANTHROPIC_API_URL}/sessions`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ agent: DOC_AGENT_ID, environment_id: DOC_AGENT_ENV_ID }),
+        });
+
+        if (!sessionRes.ok) {
+          const err = await sessionRes.text();
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Failed to create doc agent session (${sessionRes.status}): ${err}`,
+              },
+            ],
+          };
+        }
+
+        const session = (await sessionRes.json()) as { id: string };
+        const sessionId = session.id;
+
+        // 2. Send the query via events endpoint
+        const msgRes = await fetch(
+          `${ANTHROPIC_API_URL}/sessions/${sessionId}/events`,
+          {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              events: [
+                {
+                  type: "user.message",
+                  content: [{ type: "text", text: query }],
+                },
+              ],
+            }),
+          }
+        );
+
+        if (!msgRes.ok) {
+          const err = await msgRes.text();
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Failed to send message to doc agent (${msgRes.status}): ${err}`,
+              },
+            ],
+          };
+        }
+
+        // 3. Poll for completion
+        const maxWaitMs = 120_000;
+        const pollIntervalMs = 2_000;
+        const startTime = Date.now();
+
+        while (Date.now() - startTime < maxWaitMs) {
+          await new Promise((r) => setTimeout(r, pollIntervalMs));
+
+          const statusRes = await fetch(
+            `${ANTHROPIC_API_URL}/sessions/${sessionId}`,
+            { headers }
+          );
+
+          if (!statusRes.ok) continue;
+
+          const statusData = (await statusRes.json()) as { status: string };
+
+          if (statusData.status === "idle" || statusData.status === "terminated") {
+            break;
+          }
+        }
+
+        // 4. Get the response events
+        const eventsRes = await fetch(
+          `${ANTHROPIC_API_URL}/sessions/${sessionId}/events?order=desc&limit=20`,
+          { headers }
+        );
+
+        if (!eventsRes.ok) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: "Doc agent completed but failed to retrieve results.",
+              },
+            ],
+          };
+        }
+
+        const eventsData = (await eventsRes.json()) as {
+          data?: Array<{
+            type: string;
+            content?: Array<{ type: string; text?: string }>;
+          }>;
+        };
+
+        // Extract the last agent message
+        const events = eventsData.data || [];
+        const agentMessages = events.filter(
+          (e: { type: string }) => e.type === "agent.message"
+        );
+        const lastMessage = agentMessages[0];
+
+        if (!lastMessage || !lastMessage.content) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: "Doc agent returned no results. Try asking the user for the API docs URL.",
+              },
+            ],
+          };
+        }
+
+        const text = lastMessage.content
+          .filter(
+            (c: { type: string; text?: string }) =>
+              c.type === "text" && c.text
+          )
+          .map((c: { text?: string }) => c.text)
+          .join("\n\n");
+
+        return {
+          content: [{ type: "text" as const, text: text || "No results." }],
+        };
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Doc agent failed: ${message}`,
+            },
+          ],
+        };
+      }
+    },
+  }),
+    { name: "lookup_api_docs" }
+  );
+
+  // Web search tool — uses Browserless Search API
+  api.registerTool(
+    () => ({
+    name: "google_search",
+    description:
+      "Search the web and return structured results. Use this FIRST when looking for API documentation, developer docs, or any information you don't have. Much better than guessing URLs with web_fetch. Returns titles, URLs, and descriptions.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "Search query (e.g. 'Fathom API documentation')",
+        },
+      },
+      required: ["query"],
+    },
+    async execute(_id: string, params: Record<string, unknown>) {
+      if (!BROWSERLESS_TOKEN) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: "Error: BROWSERLESS_TOKEN not configured.",
+            },
+          ],
+        };
+      }
+
+      const query = params.query as string;
+      const limit = (params.limit as number) || 1;
+
+      try {
+        const res = await fetch(
+          `${BROWSERLESS_URL}/search?token=${BROWSERLESS_TOKEN}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              query,
+              limit,
+              sources: ["web"],
+            }),
+          }
+        );
+
+        if (!res.ok) {
+          const text = await res.text();
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Search failed (${res.status}): ${text}`,
+              },
+            ],
+          };
+        }
+
+        const data = (await res.json()) as {
+          success: boolean;
+          data?: {
+            web?: Array<{
+              title: string;
+              url: string;
+              description: string;
+            }>;
+          };
+        };
+
+        const results = data.data?.web || [];
+        const formatted = results
+          .map(
+            (r: { title: string; url: string; description: string }, i: number) =>
+              `${i + 1}. **${r.title}**\n   ${r.url}\n   ${r.description}`
+          )
+          .join("\n\n");
+
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: formatted || "No results found.",
+            },
+          ],
+        };
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        return {
+          content: [
+            { type: "text" as const, text: `Search failed: ${message}` },
+          ],
+        };
+      }
+    },
+  }),
+    { name: "google_search" }
+  );
+
   // Screenshot tool — calls Browserless REST API directly, uploads to R2, returns URL
-  api.registerTool({
+  api.registerTool(
+    () => ({
     name: "take_screenshot",
     description:
       "Take a screenshot of any webpage. Returns a public image URL. Use when user asks to screenshot, capture, or show them any webpage. Always include the returned URL as a markdown image in your response: ![Screenshot](url)",
@@ -846,7 +1319,9 @@ export default function (api: any) {
         return { content: [{ type: "text" as const, text: `Screenshot failed: ${message}` }] };
       }
     },
-  });
+  }),
+    { name: "take_screenshot" }
+  );
 
   registerPrecisionTool(
     api,
